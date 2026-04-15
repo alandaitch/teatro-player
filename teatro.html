@@ -187,13 +187,14 @@
     background: transparent; border: none;
     border-bottom: 1px solid var(--rule);
     color: var(--parchment); padding: 3px 2px;
-    font-family: var(--serif); font-style: italic; font-size: 14px;
-    width: 160px; flex-shrink: 0;
+    font-family: var(--mono); font-size: 13px; font-weight: 600;
+    letter-spacing: 0.02em;
+    width: 180px; flex-shrink: 0;
     transition: border-color .15s;
   }
   .row .name { min-width: 0; }
   .row .label-input:focus { outline: none; border-bottom-color: var(--amber); }
-  .row .label-input::placeholder { color: var(--parchment-mute); font-style: italic; }
+  .row .label-input::placeholder { color: var(--parchment-mute); font-weight: 500; }
   .row button {
     background: var(--ink-3); border: 1px solid var(--parchment-mute);
     color: var(--parchment); padding: 5px 10px; border-radius: 0;
@@ -245,7 +246,23 @@
     opacity: 0.6; z-index: 5;
   }
 
-  #control .top { display: grid; grid-template-columns: 1.2fr 1fr 340px; gap: 14px; flex: 1; min-height: 0; }
+  #control .top {
+    display: grid;
+    grid-template-columns: minmax(0,1.2fr) minmax(0,1fr) 6px var(--queue-width, 340px);
+    gap: 14px; flex: 1; min-height: 0;
+  }
+  #control .splitter {
+    cursor: col-resize; background: transparent;
+    position: relative; user-select: none;
+    margin: 0 -7px; z-index: 4;
+  }
+  #control .splitter::before {
+    content: ''; position: absolute; inset: 0;
+    left: 7px; right: 7px; background: var(--rule);
+    transition: background .15s;
+  }
+  #control .splitter:hover::before,
+  #control .splitter.dragging::before { background: var(--amber-hot); }
 
   .panel {
     background: var(--ink-2);
@@ -299,20 +316,20 @@
   .preview::before { top: 6px; left: 6px; border-right: none; border-bottom: none; }
   .preview::after { bottom: 6px; right: 6px; border-left: none; border-top: none; }
   .preview video { width: 100%; height: 100%; object-fit: contain; background: #000; display: block; }
-  .preview .empty { color: var(--ink-4); font-family: var(--serif); font-style: italic; font-size: 32px; }
+  .preview .empty { color: var(--ink-4); font-family: var(--mono); font-weight: 700; font-size: 18px; letter-spacing: 0.1em; }
   .preview.blackout::after {
     content: 'BLACKOUT'; position: absolute; inset: 0; width: auto; height: auto; border: none;
     display: flex; align-items: center; justify-content: center;
     background: #000; color: var(--crimson-hot);
-    font-family: var(--serif); font-weight: 800; font-style: italic;
-    letter-spacing: .3em; font-size: 32px;
+    font-family: var(--mono); font-weight: 800;
+    letter-spacing: .3em; font-size: 28px;
   }
 
   .scene-meta { display: flex; flex-direction: column; gap: 6px; }
   .scene-meta .label {
-    font-family: var(--serif); font-style: italic; font-weight: 800;
-    font-size: 24px; line-height: 1.1; color: var(--parchment);
-    letter-spacing: -0.01em;
+    font-family: var(--mono); font-weight: 700;
+    font-size: 20px; line-height: 1.2; color: var(--parchment);
+    letter-spacing: 0.02em;
   }
   .scene-meta .name {
     font-family: var(--mono); font-size: 12px;
@@ -373,8 +390,8 @@
     background:
       linear-gradient(180deg, var(--crimson-hot) 0%, var(--crimson) 100%);
     color: var(--parchment); cursor: pointer;
-    font-family: var(--serif); font-style: italic; font-weight: 800;
-    font-size: 32px; letter-spacing: 0.02em;
+    font-family: var(--mono); font-weight: 800;
+    font-size: 26px; letter-spacing: 0.08em; text-transform: uppercase;
     box-shadow:
       0 4px 0 0 #7a1f18,
       0 8px 24px rgba(196,52,42,0.35),
@@ -395,7 +412,7 @@
   }
   #bigCue:disabled {
     background: var(--ink-3); border-color: var(--ink-4); color: var(--parchment-mute);
-    box-shadow: 0 2px 0 0 var(--ink); font-style: normal; cursor: not-allowed;
+    box-shadow: 0 2px 0 0 var(--ink); cursor: not-allowed;
   }
   #bigCue.armed {
     background: linear-gradient(180deg, var(--amber-hot) 0%, var(--amber) 100%);
@@ -433,8 +450,9 @@
     font-variant-numeric: tabular-nums; font-size: 12px; font-weight: 700;
   }
   .queue .row .lbl {
-    font-family: var(--serif); font-style: italic; font-weight: 700;
-    font-size: 16px; color: var(--parchment);
+    font-family: var(--mono); font-weight: 700;
+    font-size: 14px; color: var(--parchment);
+    letter-spacing: 0.02em;
   }
   .queue .row .nm {
     font-family: var(--mono); color: var(--parchment-dim); font-size: 11px;
@@ -450,6 +468,32 @@
     border-radius: 0; cursor: pointer;
   }
   .queue .row button:hover { border-color: var(--amber-hot); color: var(--amber-hot); }
+  .queue .row .thumb {
+    width: 52px; height: 32px; flex-shrink: 0;
+    background: #000; border: 1px solid var(--rule);
+    object-fit: cover; display: block;
+  }
+  .queue .row .thumb-placeholder {
+    width: 52px; height: 32px; flex-shrink: 0;
+    background: var(--ink-4); border: 1px solid var(--rule);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 9px; color: var(--parchment-mute); font-weight: 700;
+    letter-spacing: 0.1em;
+  }
+  /* Next-preview hover/click affordance */
+  .preview.clickable { cursor: pointer; }
+  .preview.clickable::before {
+    border-color: var(--amber-hot); opacity: 0.8;
+  }
+  .preview .peek-hint {
+    position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%);
+    background: rgba(10,9,8,0.85); border: 1px solid var(--amber);
+    color: var(--amber-hot); padding: 5px 10px; font-size: 10px;
+    font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase;
+    pointer-events: none; z-index: 3;
+    transition: opacity .15s;
+  }
+  .preview.playing .peek-hint { opacity: 0.3; }
   .queue h3 label { cursor: pointer; }
   .queue h3 label:hover { color: var(--amber-hot); }
 
@@ -519,8 +563,9 @@
   #editModal .modal::before { top: -1px; left: -1px; border-right: none; border-bottom: none; }
   #editModal .modal::after { bottom: -1px; right: -1px; border-left: none; border-top: none; }
   #editModal h3 {
-    font-family: var(--serif); font-style: italic; font-weight: 800;
-    font-size: 24px; color: var(--parchment); margin-bottom: 4px;
+    font-family: var(--mono); font-weight: 800;
+    font-size: 18px; color: var(--parchment); margin-bottom: 4px;
+    letter-spacing: 0.08em; text-transform: uppercase;
   }
   #editModal input, #editModal textarea {
     background: var(--ink); border: 1px solid var(--rule);
@@ -531,7 +576,7 @@
   #editModal input:focus, #editModal textarea:focus {
     outline: none; border-color: var(--amber);
   }
-  #editModal textarea { min-height: 90px; resize: vertical; font-family: var(--serif); font-size: 14px; font-style: italic; }
+  #editModal textarea { min-height: 90px; resize: vertical; font-family: var(--mono); font-size: 13px; font-weight: 500; line-height: 1.5; }
   #editModal label {
     font-family: var(--mono); font-size: 9px;
     text-transform: uppercase; letter-spacing: 0.28em; color: var(--parchment-mute);
@@ -613,8 +658,9 @@
     <!-- Next up -->
     <div class="panel next">
       <h3>En espera · Siguiente</h3>
-      <div class="preview">
+      <div class="preview clickable" id="nextPreview">
         <video id="previewNext" muted playsinline></video>
+        <span class="peek-hint">▶ Click para previsualizar (sin audio)</span>
       </div>
       <div class="scene-meta">
         <span class="kind-pill" id="nextPill">—</span>
@@ -622,6 +668,8 @@
         <div class="name" id="nextName"></div>
       </div>
     </div>
+
+    <div class="splitter" id="splitter" title="Arrastrá para ajustar el ancho de la lista"></div>
 
     <!-- Queue -->
     <div class="panel queue">
@@ -644,7 +692,7 @@
 
   <!-- Controls row -->
   <div class="controls-row">
-    <button class="btn warn" id="cueNowBtn" title="Saltar a la transición ahora, sin esperar fin del loop">⚡ Cue inmediato</button>
+    <button class="btn warn" id="cueNowBtn" title="Corta el loop actual ahora mismo (sin esperar que termine la iteración) y dispara la transición inmediatamente. Úsalo para emergencias o cuando perdés el timing.">✂ Cortar loop · pasar YA</button>
     <button class="btn secondary" id="prevBtn" title="Escena anterior">◀ Anterior</button>
     <button class="btn secondary" id="pauseBtn">⏸ Pausar</button>
     <button class="btn danger" id="blackoutBtn">🔲 Blackout</button>
@@ -1130,22 +1178,57 @@ function detectMediaType(file) {
   return null;
 }
 
+function generateThumbnail(f) {
+  if (f.thumbUrl || f._thumbPending) return;
+  if (f.mediaType === 'image') { f.thumbUrl = f.url; return; }
+  f._thumbPending = true;
+  const v = document.createElement('video');
+  v.src = f.url; v.muted = true; v.playsInline = true; v.preload = 'auto';
+  const cleanup = () => { v.src = ''; };
+  const fail = () => { f._thumbPending = false; cleanup(); };
+  v.addEventListener('loadeddata', () => {
+    try { v.currentTime = Math.min(0.2, (v.duration || 1) * 0.05); } catch(_) { fail(); }
+  }, {once:true});
+  v.addEventListener('seeked', () => {
+    try {
+      const w = 120;
+      const ratio = (v.videoHeight && v.videoWidth) ? (v.videoHeight / v.videoWidth) : 0.5625;
+      const h = Math.max(1, Math.round(w * ratio));
+      const c = document.createElement('canvas');
+      c.width = w; c.height = h;
+      c.getContext('2d').drawImage(v, 0, 0, w, h);
+      c.toBlob(b => {
+        if (b) f.thumbUrl = URL.createObjectURL(b);
+        f._thumbPending = false;
+        cleanup();
+        // Refresh queue rows if in control view
+        if (typeof updateUI === 'function' && currentState) updateUI();
+      }, 'image/jpeg', 0.82);
+    } catch(e) { fail(); }
+  }, {once:true});
+  v.addEventListener('error', fail, {once:true});
+  setTimeout(() => { if (f._thumbPending) fail(); }, 8000);
+}
+
 function addFiles(list, defaultKind) {
   const newOnes = [];
   for (const file of list) {
     const mt = detectMediaType(file);
     if (!mt) continue;
-    newOnes.push({
+    const entry = {
       file, url: URL.createObjectURL(file),
       name: file.name,
       kind: defaultKind || ((files.length + newOnes.length) % 2 === 0 ? 'loop' : 'trans'),
       label: '', notes: '',
-      mediaType: mt
-    });
+      mediaType: mt,
+      thumbUrl: null
+    };
+    newOnes.push(entry);
   }
   if (!newOnes.length) return;
   pushHistory(`agregar ${newOnes.length} archivo${newOnes.length>1?'s':''}`);
   files.push(...newOnes);
+  newOnes.forEach(generateThumbnail);
   render();
   if (controlEl.classList.contains('active')) sendFilesUpdate();
 }
@@ -1347,7 +1430,9 @@ function updateUI() {
 
   // Previews
   syncPreview(previewNow, cur, true);
+  const nextChanged = previewNext.src && next && !previewNext.src.endsWith(next.url.split('/').pop());
   syncPreview(previewNext, next, false);
+  if (nextChanged) document.getElementById('nextPreview')?.classList.remove('playing');
 
   // Now panel
   nowLabel.textContent = cur ? sceneLabel(cur, s.idx) : '—';
@@ -1392,9 +1477,13 @@ function updateUI() {
     row.className = rowCls;
     row.draggable = true;
     row.dataset.idx = i;
+    const thumbHtml = f.thumbUrl
+      ? `<img class="thumb" src="${f.thumbUrl}" alt="">`
+      : `<div class="thumb-placeholder">${f.mediaType==='image'?'IMG':'VID'}</div>`;
     row.innerHTML = `
       <span class="drag-handle" title="Arrastrá para reordenar">⋮⋮</span>
       <span class="idx-num">${i+1}</span>
+      ${thumbHtml}
       <span class="kind" title="Click para cambiar tipo">${f.kind==='loop'?'L':'T'}</span>
       <div class="row-content">
         <span class="lbl">${sceneLabel(f, i)}</span>
@@ -1402,6 +1491,7 @@ function updateUI() {
       </div>
       <button data-a="edit" title="Editar">📝</button>
     `;
+    if (!f.thumbUrl && !f._thumbPending) generateThumbnail(f);
     row.querySelector('.row-content').onclick = () => {
       if (confirm('¿Saltar a "' + sceneLabel(f, i) + '"?')) {
         bus.postMessage({type:'jumpTo', idx: i});
@@ -1565,6 +1655,60 @@ document.getElementById('timebar').onclick = (e) => {
 
 // Add more files during live
 document.getElementById('addMoreInput').addEventListener('change', e => addFiles(e.target.files));
+
+// ==== Next-preview click-to-peek (muted) ====
+(function(){
+  const nextPrev = document.getElementById('nextPreview');
+  const nextVid = document.getElementById('previewNext');
+  if (!nextPrev) return;
+  nextPrev.addEventListener('click', () => {
+    // Find the next file
+    const next = currentState ? files[currentState.idx + 1] : files[1];
+    if (!next) return;
+    if (next.mediaType === 'image') return; // image preview already visible
+    nextVid.muted = true;
+    if (nextVid.paused) {
+      nextVid.loop = true;
+      nextVid.play().catch(()=>{});
+      nextPrev.classList.add('playing');
+    } else {
+      nextVid.pause();
+      nextVid.currentTime = 0.1;
+      nextPrev.classList.remove('playing');
+    }
+  });
+})();
+
+// ==== Splitter drag to resize right queue column ====
+(function(){
+  const splitter = document.getElementById('splitter');
+  if (!splitter) return;
+  const topEl = document.querySelector('#control .top');
+  // Load saved width
+  const saved = parseInt(localStorage.getItem('teatro.queueWidth') || '0', 10);
+  if (saved > 200 && saved < 900) topEl.style.setProperty('--queue-width', saved + 'px');
+  let startX = 0, startWidth = 340;
+  splitter.addEventListener('mousedown', e => {
+    e.preventDefault();
+    startX = e.clientX;
+    startWidth = parseInt(getComputedStyle(topEl).getPropertyValue('--queue-width')) || 340;
+    splitter.classList.add('dragging');
+    const move = ev => {
+      const dx = startX - ev.clientX; // dragging left increases width
+      const w = Math.max(220, Math.min(800, startWidth + dx));
+      topEl.style.setProperty('--queue-width', w + 'px');
+    };
+    const up = () => {
+      document.removeEventListener('mousemove', move);
+      document.removeEventListener('mouseup', up);
+      splitter.classList.remove('dragging');
+      const final = getComputedStyle(topEl).getPropertyValue('--queue-width');
+      localStorage.setItem('teatro.queueWidth', parseInt(final));
+    };
+    document.addEventListener('mousemove', move);
+    document.addEventListener('mouseup', up);
+  });
+})();
 
 window.addEventListener('keydown', (e) => {
   // Undo/redo work in both setup and control
