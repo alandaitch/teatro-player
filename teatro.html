@@ -1669,6 +1669,7 @@ document.getElementById('reopenBtn').onclick = () => {
 document.getElementById('backToSetupBtn').onclick = () => {
   setupEl.style.display = 'block';
   controlEl.classList.remove('active');
+  hideDisconnect();
   // Detach previews
   previewNow.removeAttribute('src'); previewNow.load();
   previewNext.removeAttribute('src'); previewNext.load();
