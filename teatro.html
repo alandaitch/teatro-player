@@ -967,21 +967,39 @@ if (MODE === 'output') {
   oA.addEventListener('timeupdate', onTimeUpdate);
   oB.addEventListener('timeupdate', onTimeUpdate);
 
+  // Cache blob URLs created locally in this (output) window, keyed by file identity
+  const localUrlCache = new Map();
+  function fileKey(f) { return (f.file ? (f.file.name + ':' + f.file.size + ':' + (f.file.lastModified||0)) : f.name); }
+  function rehydrate(entry) {
+    // If control sent the actual File, create a blob URL in THIS window so
+    // the <video> can always load it (cross-window blob URLs from the parent
+    // window can fail, e.g. with files from cloud-synced folders).
+    if (entry.file instanceof Blob) {
+      const k = fileKey(entry);
+      let u = localUrlCache.get(k);
+      if (!u) { u = URL.createObjectURL(entry.file); localUrlCache.set(k, u); }
+      entry.url = u;
+    }
+    return entry;
+  }
+  function rehydrateAll(list) { return list.map(rehydrate); }
+
   bus.onmessage = (e) => {
     const m = e.data;
     if (m.type === 'load') {
-      filesList = m.files;
+      filesList = rehydrateAll(m.files);
       bus.postMessage({type:'loaded'});
     } else if (m.type === 'reorder') {
       // Live reorder: update filesList but also keep current playback pointer
       const curFile = filesList[idx];
-      filesList = m.files;
-      // Find where the current file moved to
-      const newIdx = filesList.findIndex(f => f.url === curFile?.url);
+      const curKey = curFile ? fileKey(curFile) : null;
+      filesList = rehydrateAll(m.files);
+      // Find where the current file moved to (by file identity, not blob URL)
+      const newIdx = curKey ? filesList.findIndex(f => fileKey(f) === curKey) : -1;
       if (newIdx >= 0) idx = newIdx;
       // Refresh idle preload to match the new "next"
       const nextF = filesList[idx + 1];
-      if (nextF && idle.src !== nextF.url) { idle.src = nextF.url; idle.load(); }
+      if (nextF && nextF.mediaType !== 'image' && idle.src !== nextF.url) { idle.src = nextF.url; idle.load(); }
       sendState();
     } else if (m.type === 'start') {
       idx = 0; transitioning = false; advanceRequested = false;
@@ -1414,7 +1432,7 @@ function openOutput() {
 }
 
 function sendFilesUpdate() {
-  const payload = files.map(f => ({url: f.url, name: f.name, kind: f.kind, label: f.label, notes: f.notes, mediaType: f.mediaType}));
+  const payload = files.map(f => ({file: f.file, url: f.url, name: f.name, kind: f.kind, label: f.label, notes: f.notes, mediaType: f.mediaType}));
   if (currentState) bus.postMessage({type:'reorder', files: payload});
   else bus.postMessage({type:'load', files: payload});
 }
@@ -1602,7 +1620,7 @@ bus.onmessage = (e) => {
     statusbar.classList.add('ok');
     statusText.textContent = 'Proyección conectada';
     hideDisconnect();
-    bus.postMessage({type:'load', files: files.map(f => ({url: f.url, name: f.name, kind: f.kind, label: f.label, notes: f.notes, mediaType: f.mediaType}))});
+    bus.postMessage({type:'load', files: files.map(f => ({file: f.file, url: f.url, name: f.name, kind: f.kind, label: f.label, notes: f.notes, mediaType: f.mediaType}))});
   } else if (m.type === 'loaded') {
     if (!currentState) bus.postMessage({type:'start'});
   } else if (m.type === 'state') {
