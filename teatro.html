@@ -79,10 +79,12 @@
   }
   #setup p.hint {
     color: var(--parchment); margin-bottom: 28px;
-    font-family: var(--serif); font-size: 17px; line-height: 1.55; max-width: 760px;
-    font-style: italic;
+    font-family: var(--mono); font-size: 13px; line-height: 1.7; max-width: 780px;
+    letter-spacing: 0.02em;
   }
-  #setup p.hint b { font-style: normal; font-weight: 600; color: var(--parchment); }
+  #setup p.hint b { font-weight: 700; color: var(--parchment); }
+  #setup p.hint .tag-loop { color: var(--sage-hot); font-weight: 700; }
+  #setup p.hint .tag-trans { color: var(--amber-hot); font-weight: 700; }
 
   #drop {
     border: 1px solid var(--rule-strong);
@@ -123,9 +125,60 @@
     font-weight: 800; text-transform: uppercase;
     padding: 4px 10px; border-radius: 0; min-width: 84px; text-align: center;
     border: 2px solid transparent;
+    cursor: pointer; transition: filter .12s, transform .1s;
+    user-select: none;
   }
+  .row .kind:hover { filter: brightness(1.12); }
+  .row .kind:active { transform: scale(0.96); }
+  .row .kind::after {
+    content: ' ⇄'; opacity: 0; margin-left: 2px; font-weight: 900;
+    transition: opacity .12s;
+  }
+  .row .kind:hover::after { opacity: 0.7; }
   .row.loop .kind { color: var(--ink); background: var(--sage-hot); border-color: var(--sage-hot); }
   .row.trans .kind { color: var(--ink); background: var(--amber-hot); border-color: var(--amber-hot); }
+  .row .drag-handle {
+    cursor: grab; color: var(--parchment-mute); font-size: 16px;
+    padding: 8px 4px; user-select: none; line-height: 1;
+    display: flex; align-items: center; justify-content: center;
+    min-width: 20px; flex-shrink: 0;
+    transition: color .12s;
+  }
+  .row .drag-handle:hover { color: var(--amber-hot); }
+  .row .drag-handle:active { cursor: grabbing; }
+  .row.dragging { opacity: 0.4; }
+  .row.drag-over-top { box-shadow: inset 0 2px 0 var(--amber-hot); }
+  .row.drag-over-bottom { box-shadow: inset 0 -2px 0 var(--amber-hot); }
+  .row .media-type-badge {
+    font-size: 9px; font-weight: 700; letter-spacing: 0.1em;
+    color: var(--parchment-mute); padding: 2px 4px;
+    border: 1px solid var(--rule-strong);
+    flex-shrink: 0;
+  }
+
+  /* Undo toast */
+  #toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px);
+    background: var(--ink-2); border: 1px solid var(--amber);
+    color: var(--parchment); padding: 14px 18px;
+    font-family: var(--mono); font-size: 13px; letter-spacing: 0.04em;
+    display: none; gap: 16px; align-items: center; z-index: 200;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+    opacity: 0; transition: opacity .18s, transform .18s;
+  }
+  #toast.show { display: flex; opacity: 1; transform: translateX(-50%) translateY(0); }
+  #toast button {
+    background: var(--amber-hot); color: var(--ink);
+    border: none; padding: 6px 14px; cursor: pointer;
+    font-family: var(--mono); font-size: 12px; font-weight: 800;
+    letter-spacing: 0.1em; text-transform: uppercase;
+  }
+  #toast button:hover { background: var(--amber); }
+  #toast .toast-close {
+    background: transparent; color: var(--parchment-mute);
+    padding: 4px 8px; font-size: 16px; font-weight: 400;
+  }
+  #toast .toast-close:hover { color: var(--parchment); background: transparent; }
   .row .name {
     flex: 1; font-family: var(--mono); font-size: 13px;
     color: var(--parchment); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
@@ -280,14 +333,17 @@
     animation: pulse 1s infinite;
   }
   .scene-meta .notes {
-    font-family: var(--serif); font-style: italic; font-size: 13px; line-height: 1.5;
+    font-family: var(--mono); font-size: 13px; line-height: 1.55; font-weight: 500;
     color: var(--amber-hot);
-    background: rgba(214,143,46,0.06);
-    border-left: 2px solid var(--amber);
-    padding: 8px 12px; max-height: 70px; overflow: auto; white-space: pre-wrap;
+    background: rgba(214,143,46,0.1);
+    border-left: 3px solid var(--amber-hot);
+    padding: 10px 14px; max-height: 100px; overflow: auto; white-space: pre-wrap;
+    letter-spacing: 0.02em;
   }
   .scene-meta .notes::before {
-    content: '“ '; font-family: var(--serif); font-size: 20px; opacity: 0.5;
+    content: 'NOTA · '; font-family: var(--mono); font-size: 10px;
+    font-weight: 800; letter-spacing: 0.18em; color: var(--amber);
+    display: block; margin-bottom: 4px;
   }
   @keyframes pulse { 50% { opacity: .4; } }
 
@@ -513,13 +569,13 @@
     <div class="tag">En vivo · Cue · Proyección</div>
   </div>
   <p class="hint">
-    Cargá los MP4 en <b>orden de función</b>: loop escena 1, transición 1→2, loop escena 2, y así. La app alterna automáticamente <b style="color:var(--sage-hot)">loop</b> y <b style="color:var(--amber-hot)">transición</b>. Podés editar etiquetas, notas, orden, y tipo — incluso mientras la función está en vivo.
+    Cargá los archivos en <b>orden de función</b>: <span class="tag-loop">LOOP</span> de escena 1, <span class="tag-trans">TRANSICIÓN</span> 1→2, <span class="tag-loop">LOOP</span> de escena 2, y así. Podés arrastrar para reordenar, hacer click en el pill para cambiar tipo, y editar etiquetas y notas. Soporta video (mp4, mov, webm) e imágenes (jpg, png, gif, webp).
   </p>
 
   <label id="drop" for="fileInput">
     <div class="ic">+</div>
-    <div class="cta">Arrastrá MP4 acá · o hacé click</div>
-    <input type="file" id="fileInput" multiple accept="video/mp4,video/*">
+    <div class="cta">Arrastrá videos o imágenes acá · o hacé click</div>
+    <input type="file" id="fileInput" multiple accept="video/*,image/*">
   </label>
 
   <div class="sequence" id="sequence"></div>
@@ -573,7 +629,7 @@
         Libreto · Secuencia
         <label style="cursor:pointer; color:var(--amber-hot); letter-spacing:0.2em; font-size: 9px;">
           + AGREGAR
-          <input type="file" id="addMoreInput" multiple accept="video/mp4,video/*" style="display:none">
+          <input type="file" id="addMoreInput" multiple accept="video/*,image/*" style="display:none">
         </label>
       </h3>
       <div id="queueList"></div>
@@ -615,9 +671,17 @@
 <div id="outputStage">
   <video id="oA" playsinline></video>
   <video id="oB" playsinline></video>
+  <img id="oImg" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000;display:none">
   <div class="blackout-layer"></div>
 </div>
 <div id="outputHint">Presioná <b>F</b> para pantalla completa · Esta ventana es la proyección del teatro</div>
+
+<!-- ===== UNDO TOAST ===== -->
+<div id="toast">
+  <span id="toastMsg">Escena eliminada</span>
+  <button id="toastUndo">↶ Deshacer</button>
+  <button class="toast-close" id="toastClose">×</button>
+</div>
 
 <!-- ===== EDIT MODAL ===== -->
 <div id="editModal">
@@ -648,12 +712,15 @@ if (MODE === 'output') {
 
   const oA = document.getElementById('oA');
   const oB = document.getElementById('oB');
+  const oImg = document.getElementById('oImg');
   const stage = document.getElementById('outputStage');
   let active = oA, idle = oB;
   let idx = 0, transitioning = false, advanceRequested = false;
   let filesList = [];
   let paused = false;
   let volume = 1;
+  let imageTransTimer = null;
+  const IMAGE_TRANS_DURATION = 3.0; // seconds for image transitions
 
   const hint = document.getElementById('outputHint');
   setTimeout(() => hint.style.opacity = '0', 5000);
@@ -680,10 +747,35 @@ if (MODE === 'output') {
     el.play().catch(() => { el.muted = true; el.play().catch(()=>{}); });
   }
 
+  function clearImageTimer() {
+    if (imageTransTimer) { clearTimeout(imageTransTimer); imageTransTimer = null; }
+  }
+
   function playIndex(i) {
     idx = i;
+    clearImageTimer();
     const cur = filesList[idx];
     if (!cur) { bus.postMessage({type:'ended-all'}); return; }
+    if (cur.mediaType === 'image') {
+      oImg.src = cur.url;
+      oImg.style.display = 'block';
+      oA.classList.remove('show'); oB.classList.remove('show');
+      oA.pause(); oB.pause();
+      // For image transitions, auto-advance after duration
+      if (cur.kind === 'trans' && !paused) {
+        imageTransTimer = setTimeout(() => {
+          clearImageTimer();
+          transitioning = false;
+          advanceToNext();
+        }, IMAGE_TRANS_DURATION * 1000);
+      }
+      // Preload next
+      const next = filesList[idx + 1];
+      if (next && next.mediaType !== 'image') { idle.src = next.url; idle.load(); }
+      sendState();
+      return;
+    }
+    oImg.style.display = 'none';
     active.src = cur.url;
     active.loop = false;
     active.muted = false;
@@ -696,11 +788,26 @@ if (MODE === 'output') {
     const onReady = () => { active.removeEventListener('loadeddata', onReady); tryPlay(active); };
     active.addEventListener('loadeddata', onReady);
     const next = filesList[idx + 1];
-    if (next) { idle.src = next.url; idle.load(); }
+    if (next && next.mediaType !== 'image') { idle.src = next.url; idle.load(); }
     sendState();
   }
 
+  function advanceToNext() {
+    const nextIdx = idx + 1;
+    if (nextIdx >= filesList.length) {
+      const cur = filesList[idx];
+      if (cur && cur.kind === 'loop') { doLoopAgain(); return; }
+      bus.postMessage({type:'ended-all'}); return;
+    }
+    playIndex(nextIdx);
+  }
+
   function doLoopAgain() {
+    const cur = filesList[idx];
+    if (cur?.mediaType === 'image') {
+      // Static image loop: just stay on it
+      return;
+    }
     active.currentTime = 0;
     tryPlay(active);
   }
@@ -716,6 +823,12 @@ if (MODE === 'output') {
       transitioning = false; bus.postMessage({type:'ended-all'}); return;
     }
     const next = filesList[nextIdx];
+    // If next is image OR current is image, use simple jumpTo path
+    if (next.mediaType === 'image' || cur?.mediaType === 'image') {
+      transitioning = false;
+      playIndex(nextIdx);
+      return;
+    }
     if (!idle.src || !idle.src.endsWith(next.url.split('/').pop())) { idle.src = next.url; }
     idle.currentTime = 0;
     const onPlaying = () => {
@@ -737,6 +850,7 @@ if (MODE === 'output') {
 
   function jumpTo(targetIdx) {
     if (targetIdx < 0 || targetIdx >= filesList.length) return;
+    clearImageTimer();
     transitioning = false; advanceRequested = false;
     // Swap to idle for a cleaner switch
     active.classList.remove('show');
@@ -792,7 +906,10 @@ if (MODE === 'output') {
       playIndex(0);
     } else if (m.type === 'advance') {
       const cur = filesList[idx];
-      if (cur && cur.kind === 'loop' && !advanceRequested && !transitioning) {
+      if (cur?.mediaType === 'image' && cur.kind === 'loop' && !transitioning) {
+        // Image loops advance immediately — no "end of iteration" to wait for
+        doAdvance();
+      } else if (cur && cur.kind === 'loop' && !advanceRequested && !transitioning) {
         advanceRequested = true;
         sendState();
       }
@@ -845,7 +962,7 @@ if (MODE === 'output') {
 // CONTROL MODE
 // ========================================================================
 
-const files = []; // {file, url, name, kind, label, notes}
+const files = []; // {file, url, name, kind, label, notes, mediaType}
 
 const seqEl = document.getElementById('sequence');
 const startBtn = document.getElementById('startBtn');
@@ -856,48 +973,179 @@ function sceneLabel(f, i) {
   return f.label || `Escena ${i+1}`;
 }
 
+// ==== UNDO / REDO ====
+const undoStack = [];
+const redoStack = [];
+const UNDO_LIMIT = 50;
+
+function snapshot() {
+  return files.map(f => ({
+    file: f.file, url: f.url, name: f.name, kind: f.kind,
+    label: f.label, notes: f.notes, mediaType: f.mediaType
+  }));
+}
+
+function pushHistory(label) {
+  undoStack.push({ label, state: snapshot() });
+  if (undoStack.length > UNDO_LIMIT) undoStack.shift();
+  redoStack.length = 0;
+}
+
+function restoreState(state) {
+  files.length = 0;
+  state.forEach(s => files.push({ ...s }));
+  render();
+  if (typeof controlEl !== 'undefined' && controlEl.classList.contains('active')) sendFilesUpdate();
+}
+
+function undo() {
+  if (!undoStack.length) return;
+  redoStack.push({ label: 'redo', state: snapshot() });
+  const prev = undoStack.pop();
+  restoreState(prev.state);
+  showToast(`Deshecho: ${prev.label}`, null);
+}
+
+function redo() {
+  if (!redoStack.length) return;
+  undoStack.push({ label: 'undo', state: snapshot() });
+  const next = redoStack.pop();
+  restoreState(next.state);
+  showToast(`Rehecho`, null);
+}
+
+// ==== TOAST ====
+let toastTimer = null;
+const toastEl = document.getElementById('toast');
+const toastMsgEl = document.getElementById('toastMsg');
+const toastUndoBtn = document.getElementById('toastUndo');
+const toastCloseBtn = document.getElementById('toastClose');
+
+function showToast(msg, undoAction) {
+  toastMsgEl.textContent = msg;
+  toastEl.classList.add('show');
+  toastUndoBtn.style.display = undoAction ? 'inline-block' : 'none';
+  toastUndoBtn.onclick = () => {
+    if (undoAction) undoAction();
+    hideToast();
+  };
+  clearTimeout(toastTimer);
+  // Stay until next action (user's requirement); also auto-hide after 30s as safety
+  toastTimer = setTimeout(hideToast, 30000);
+}
+function hideToast() {
+  toastEl.classList.remove('show');
+  clearTimeout(toastTimer);
+}
+toastCloseBtn.onclick = hideToast;
+
+// ==== RENDER SETUP ROWS ====
+let dragSrcIdx = -1;
+
 function render() {
   seqEl.innerHTML = '';
   files.forEach((f, i) => {
     const row = document.createElement('div');
     row.className = 'row ' + f.kind;
+    row.draggable = true;
+    row.dataset.idx = i;
+    const isImg = f.mediaType === 'image';
     row.innerHTML = `
-      <span class="kind">${f.kind === 'loop' ? 'Loop' : 'Transición'}</span>
+      <span class="drag-handle" title="Arrastrá para reordenar">⋮⋮</span>
+      <span class="kind" title="Click para cambiar tipo">${f.kind === 'loop' ? 'Loop' : 'Transición'}</span>
+      <span class="media-type-badge">${isImg ? 'IMG' : 'VID'}</span>
       <input class="label-input" placeholder="Etiqueta" value="${(f.label||'').replace(/"/g,'&quot;')}">
       <span class="name" title="${f.name}">${i+1}. ${f.name}</span>
-      <button data-a="edit" title="Notas">📝</button>
-      <button data-a="up">↑</button>
-      <button data-a="down">↓</button>
-      <button data-a="toggle">⇄</button>
-      <button data-a="del">✕</button>
+      <button data-a="edit" title="Notas para el operador">📝 Notas</button>
+      <button data-a="del" title="Eliminar">✕</button>
     `;
     row.querySelector('.label-input').oninput = (e) => { f.label = e.target.value; };
-    row.querySelectorAll('button').forEach(b => {
+    // Prevent drag when interacting with inputs
+    row.querySelector('.label-input').addEventListener('mousedown', e => e.stopPropagation());
+    row.querySelector('.label-input').addEventListener('dragstart', e => e.preventDefault());
+    row.querySelector('.kind').onclick = () => {
+      pushHistory('cambio de tipo');
+      f.kind = f.kind === 'loop' ? 'trans' : 'loop';
+      render();
+      if (controlEl.classList.contains('active')) sendFilesUpdate();
+    };
+    row.querySelectorAll('[data-a]').forEach(b => {
       b.onclick = () => {
         const a = b.dataset.a;
-        if (a === 'up' && i > 0) [files[i-1], files[i]] = [files[i], files[i-1]];
-        else if (a === 'down' && i < files.length-1) [files[i+1], files[i]] = [files[i], files[i+1]];
-        else if (a === 'toggle') f.kind = f.kind === 'loop' ? 'trans' : 'loop';
-        else if (a === 'del') { URL.revokeObjectURL(f.url); files.splice(i, 1); }
-        else if (a === 'edit') openEdit(i);
-        render();
+        if (a === 'del') {
+          pushHistory('eliminar "' + sceneLabel(f, i) + '"');
+          files.splice(i, 1);
+          render();
+          if (controlEl.classList.contains('active')) sendFilesUpdate();
+          showToast(`Eliminada: ${sceneLabel(f, i)}`, undo);
+        } else if (a === 'edit') openEdit(i);
       };
+    });
+    // Drag & drop reorder
+    row.addEventListener('dragstart', e => {
+      dragSrcIdx = i;
+      row.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+      try { e.dataTransfer.setData('text/plain', String(i)); } catch(_){}
+    });
+    row.addEventListener('dragend', () => {
+      row.classList.remove('dragging');
+      document.querySelectorAll('.row').forEach(r => r.classList.remove('drag-over-top','drag-over-bottom'));
+      dragSrcIdx = -1;
+    });
+    row.addEventListener('dragover', e => {
+      if (dragSrcIdx < 0) return;
+      e.preventDefault();
+      const rect = row.getBoundingClientRect();
+      const below = (e.clientY - rect.top) > rect.height / 2;
+      row.classList.toggle('drag-over-top', !below);
+      row.classList.toggle('drag-over-bottom', below);
+    });
+    row.addEventListener('dragleave', () => {
+      row.classList.remove('drag-over-top','drag-over-bottom');
+    });
+    row.addEventListener('drop', e => {
+      e.preventDefault();
+      if (dragSrcIdx < 0 || dragSrcIdx === i) return;
+      const rect = row.getBoundingClientRect();
+      const below = (e.clientY - rect.top) > rect.height / 2;
+      let targetIdx = below ? i + 1 : i;
+      pushHistory('reordenar');
+      const [moved] = files.splice(dragSrcIdx, 1);
+      if (dragSrcIdx < targetIdx) targetIdx--;
+      files.splice(targetIdx, 0, moved);
+      render();
+      if (controlEl.classList.contains('active')) sendFilesUpdate();
     });
     seqEl.appendChild(row);
   });
   startBtn.disabled = files.length === 0;
 }
 
+function detectMediaType(file) {
+  if (file.type.startsWith('image/')) return 'image';
+  if (file.type.startsWith('video/')) return 'video';
+  if (/\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i.test(file.name)) return 'image';
+  if (/\.(mp4|mov|m4v|webm|mkv)$/i.test(file.name)) return 'video';
+  return null;
+}
+
 function addFiles(list, defaultKind) {
+  const newOnes = [];
   for (const file of list) {
-    if (!file.type.startsWith('video/') && !/\.(mp4|mov|m4v|webm)$/i.test(file.name)) continue;
-    files.push({
+    const mt = detectMediaType(file);
+    if (!mt) continue;
+    newOnes.push({
       file, url: URL.createObjectURL(file),
       name: file.name,
-      kind: defaultKind || (files.length % 2 === 0 ? 'loop' : 'trans'),
-      label: '', notes: ''
+      kind: defaultKind || ((files.length + newOnes.length) % 2 === 0 ? 'loop' : 'trans'),
+      label: '', notes: '',
+      mediaType: mt
     });
   }
+  if (!newOnes.length) return;
+  pushHistory(`agregar ${newOnes.length} archivo${newOnes.length>1?'s':''}`);
+  files.push(...newOnes);
   render();
   if (controlEl.classList.contains('active')) sendFilesUpdate();
 }
@@ -949,7 +1197,7 @@ document.getElementById('saveBtn').onclick = () => {
   const project = {
     version: 1,
     saved: new Date().toISOString(),
-    scenes: files.map(f => ({ name: f.name, kind: f.kind, label: f.label, notes: f.notes }))
+    scenes: files.map(f => ({ name: f.name, kind: f.kind, label: f.label, notes: f.notes, mediaType: f.mediaType }))
   };
   const blob = new Blob([JSON.stringify(project, null, 2)], { type: 'application/json' });
   const a = document.createElement('a');
@@ -1047,7 +1295,7 @@ function openOutput() {
 }
 
 function sendFilesUpdate() {
-  const payload = files.map(f => ({url: f.url, name: f.name, kind: f.kind, label: f.label, notes: f.notes}));
+  const payload = files.map(f => ({url: f.url, name: f.name, kind: f.kind, label: f.label, notes: f.notes, mediaType: f.mediaType}));
   if (currentState) bus.postMessage({type:'reorder', files: payload});
   else bus.postMessage({type:'load', files: payload});
 }
@@ -1059,11 +1307,31 @@ function fmtTime(s) {
 }
 
 function syncPreview(videoEl, file, isNow) {
-  if (!file) { videoEl.removeAttribute('src'); videoEl.load(); return; }
+  const container = videoEl.parentElement;
+  // Ensure a sibling img exists for image previews
+  let imgEl = container.querySelector('img.preview-img');
+  if (!imgEl) {
+    imgEl = document.createElement('img');
+    imgEl.className = 'preview-img';
+    imgEl.style.cssText = 'width:100%;height:100%;object-fit:contain;background:#000;display:none;position:absolute;inset:0';
+    container.appendChild(imgEl);
+  }
+  if (!file) {
+    videoEl.removeAttribute('src'); videoEl.load();
+    imgEl.style.display = 'none'; imgEl.removeAttribute('src');
+    return;
+  }
+  if (file.mediaType === 'image') {
+    videoEl.pause(); videoEl.removeAttribute('src'); videoEl.load();
+    if (imgEl.src !== file.url) imgEl.src = file.url;
+    imgEl.style.display = 'block';
+    return;
+  }
+  imgEl.style.display = 'none';
   if (videoEl.src !== file.url) {
     videoEl.src = file.url;
     videoEl.muted = true;
-    videoEl.loop = isNow; // now-preview loops visually; next-preview freezes on frame 1
+    videoEl.loop = isNow;
     videoEl.play().catch(()=>{});
     if (!isNow) {
       videoEl.addEventListener('loadeddata', () => { videoEl.pause(); videoEl.currentTime = 0.1; }, {once:true});
@@ -1122,37 +1390,64 @@ function updateUI() {
     if (i === s.idx) rowCls += ' current';
     else if (i === s.idx + 1) rowCls += ' next-up';
     row.className = rowCls;
+    row.draggable = true;
+    row.dataset.idx = i;
     row.innerHTML = `
+      <span class="drag-handle" title="Arrastrá para reordenar">⋮⋮</span>
       <span class="idx-num">${i+1}</span>
-      <span class="kind">${f.kind==='loop'?'L':'T'}</span>
+      <span class="kind" title="Click para cambiar tipo">${f.kind==='loop'?'L':'T'}</span>
       <div class="row-content">
         <span class="lbl">${sceneLabel(f, i)}</span>
-        <span class="nm">${f.name}</span>
+        <span class="nm">${f.mediaType==='image'?'[IMG] ':''}${f.name}</span>
       </div>
-      <div class="reorder">
-        <button data-a="up">↑</button>
-        <button data-a="down">↓</button>
-      </div>
-      <button data-a="toggle" title="Cambiar tipo">⇄</button>
       <button data-a="edit" title="Editar">📝</button>
     `;
-    // Click on body jumps to that scene
     row.querySelector('.row-content').onclick = () => {
       if (confirm('¿Saltar a "' + sceneLabel(f, i) + '"?')) {
         bus.postMessage({type:'jumpTo', idx: i});
       }
     };
-    row.querySelectorAll('.reorder button, [data-a]').forEach(b => {
+    row.querySelector('.kind').onclick = (ev) => {
+      ev.stopPropagation();
+      pushHistory('cambio de tipo');
+      f.kind = f.kind === 'loop' ? 'trans' : 'loop';
+      render(); sendFilesUpdate();
+    };
+    row.querySelectorAll('[data-a]').forEach(b => {
       b.onclick = (ev) => {
         ev.stopPropagation();
-        const a = b.dataset.a;
-        if (a === 'up' && i > 0) [files[i-1], files[i]] = [files[i], files[i-1]];
-        else if (a === 'down' && i < files.length-1) [files[i+1], files[i]] = [files[i], files[i+1]];
-        else if (a === 'toggle') f.kind = f.kind === 'loop' ? 'trans' : 'loop';
-        else if (a === 'edit') openEdit(i);
-        render();
-        sendFilesUpdate();
+        if (b.dataset.a === 'edit') openEdit(i);
       };
+    });
+    // Drag reorder in live queue
+    row.addEventListener('dragstart', e => {
+      dragSrcIdx = i; row.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+    });
+    row.addEventListener('dragend', () => {
+      row.classList.remove('dragging'); dragSrcIdx = -1;
+      document.querySelectorAll('#queueList .row').forEach(r => r.classList.remove('drag-over-top','drag-over-bottom'));
+    });
+    row.addEventListener('dragover', e => {
+      if (dragSrcIdx < 0) return;
+      e.preventDefault();
+      const rect = row.getBoundingClientRect();
+      const below = (e.clientY - rect.top) > rect.height / 2;
+      row.classList.toggle('drag-over-top', !below);
+      row.classList.toggle('drag-over-bottom', below);
+    });
+    row.addEventListener('dragleave', () => row.classList.remove('drag-over-top','drag-over-bottom'));
+    row.addEventListener('drop', e => {
+      e.preventDefault();
+      if (dragSrcIdx < 0 || dragSrcIdx === i) return;
+      const rect = row.getBoundingClientRect();
+      const below = (e.clientY - rect.top) > rect.height / 2;
+      let targetIdx = below ? i + 1 : i;
+      pushHistory('reordenar');
+      const [moved] = files.splice(dragSrcIdx, 1);
+      if (dragSrcIdx < targetIdx) targetIdx--;
+      files.splice(targetIdx, 0, moved);
+      render(); sendFilesUpdate();
     });
     queueList.appendChild(row);
   });
@@ -1180,7 +1475,7 @@ bus.onmessage = (e) => {
     outputReady = true;
     statusbar.classList.add('ok');
     statusText.textContent = 'Proyección conectada';
-    bus.postMessage({type:'load', files: files.map(f => ({url: f.url, name: f.name, kind: f.kind, label: f.label, notes: f.notes}))});
+    bus.postMessage({type:'load', files: files.map(f => ({url: f.url, name: f.name, kind: f.kind, label: f.label, notes: f.notes, mediaType: f.mediaType}))});
   } else if (m.type === 'loaded') {
     if (!currentState) bus.postMessage({type:'start'});
   } else if (m.type === 'state') {
@@ -1272,6 +1567,17 @@ document.getElementById('timebar').onclick = (e) => {
 document.getElementById('addMoreInput').addEventListener('change', e => addFiles(e.target.files));
 
 window.addEventListener('keydown', (e) => {
+  // Undo/redo work in both setup and control
+  if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z') {
+      e.preventDefault();
+      if (e.shiftKey) redo(); else undo();
+      return;
+    }
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'y') {
+      e.preventDefault(); redo(); return;
+    }
+  }
   if (!controlEl.classList.contains('active')) return;
   if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
   if (e.code === 'Space' || e.code === 'Enter') {
