@@ -6,63 +6,74 @@
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body { height: 100%; background: #0d0d0d; color: #eee; font-family: -apple-system, system-ui, sans-serif; overflow: hidden; }
+  button, input, textarea { font-family: inherit; }
 
   /* ===== SETUP ===== */
-  #setup { padding: 24px; height: 100%; overflow: auto; background: #111; }
+  #setup { padding: 24px; max-width: 1100px; margin: 0 auto; height: 100%; overflow: auto; background: #111; }
   #setup h1 { margin-bottom: 8px; font-size: 22px; }
-  #setup p.hint { color: #888; margin-bottom: 20px; font-size: 13px; line-height: 1.5; }
+  #setup p.hint { color: #888; margin-bottom: 16px; font-size: 13px; line-height: 1.5; }
   #drop {
-    border: 2px dashed #444; border-radius: 10px; padding: 30px;
-    text-align: center; margin-bottom: 20px; cursor: pointer; transition: all .15s;
+    border: 2px dashed #444; border-radius: 10px; padding: 24px;
+    text-align: center; margin-bottom: 16px; cursor: pointer; transition: all .15s;
   }
   #drop.over { border-color: #6cf; background: #0a1e2a; }
   #drop input { display: none; }
 
-  .sequence { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
+  .sequence { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
   .row {
-    display: flex; align-items: center; gap: 10px;
-    background: #1e1e1e; padding: 10px 14px; border-radius: 8px;
+    display: flex; align-items: center; gap: 8px;
+    background: #1e1e1e; padding: 8px 12px; border-radius: 8px;
     border-left: 4px solid #555;
   }
   .row.loop { border-left-color: #4caf50; }
   .row.trans { border-left-color: #ff9800; }
   .row .kind {
-    font-size: 11px; font-weight: 600; text-transform: uppercase;
-    padding: 3px 8px; border-radius: 4px; min-width: 70px; text-align: center;
+    font-size: 10px; font-weight: 600; text-transform: uppercase;
+    padding: 3px 8px; border-radius: 4px; min-width: 60px; text-align: center;
   }
   .row.loop .kind { background: #2d5a2f; color: #a5e6a7; }
   .row.trans .kind { background: #6b4410; color: #ffd180; }
   .row .name { flex: 1; font-size: 13px; color: #ccc; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .row button { background: #333; border: none; color: #eee; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 12px; }
+  .row .label-input {
+    background: #0d0d0d; border: 1px solid #333; color: #ddd;
+    padding: 3px 6px; border-radius: 4px; font-size: 11px; width: 140px;
+  }
+  .row button { background: #333; border: none; color: #eee; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 11px; }
   .row button:hover { background: #444; }
 
-  .controls { display: flex; gap: 10px; flex-wrap: wrap; }
+  .controls { display: flex; gap: 8px; flex-wrap: wrap; }
   .btn {
-    padding: 10px 20px; border: none; border-radius: 6px;
-    background: #2a6ef5; color: white; cursor: pointer; font-size: 14px; font-weight: 600;
+    padding: 10px 18px; border: none; border-radius: 6px;
+    background: #2a6ef5; color: white; cursor: pointer; font-size: 13px; font-weight: 600;
   }
   .btn.secondary { background: #333; }
   .btn.danger { background: #c0392b; }
+  .btn.warn { background: #d35400; }
   .btn.success { background: #27ae60; }
   .btn:hover { filter: brightness(1.15); }
   .btn:disabled { opacity: .4; cursor: not-allowed; }
 
-  /* ===== CONTROL PANEL (operator view) ===== */
-  #control { display: none; height: 100%; padding: 16px; gap: 16px; flex-direction: column; background: #0d0d0d; }
+  /* ===== CONTROL PANEL ===== */
+  #control { display: none; height: 100%; padding: 10px; gap: 10px; flex-direction: column; background: #0d0d0d; }
   #control.active { display: flex; }
 
-  #control .top { display: flex; gap: 16px; flex: 1; min-height: 0; }
+  #control .top { display: flex; gap: 10px; flex: 1; min-height: 0; }
   .panel {
     background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 10px;
-    padding: 14px; display: flex; flex-direction: column; gap: 10px;
+    padding: 12px; display: flex; flex-direction: column; gap: 8px;
     min-height: 0;
   }
-  .panel h3 { font-size: 11px; text-transform: uppercase; color: #888; letter-spacing: .08em; }
+  .panel h3 {
+    font-size: 10px; text-transform: uppercase; color: #888; letter-spacing: .08em;
+    display: flex; justify-content: space-between; align-items: center;
+  }
 
   .now, .next { flex: 1; min-width: 0; }
   .now { border: 2px solid #4caf50; }
   .now.pending { border-color: #c0392b; animation: pulseBorder 1s infinite; }
   .now.trans { border-color: #ff9800; }
+  .now.paused { border-color: #666; }
+  .now.blackout { border-color: #000; background: #000; }
   @keyframes pulseBorder { 50% { border-color: #ff5544; } }
 
   .preview {
@@ -70,11 +81,21 @@
     display: flex; align-items: center; justify-content: center; min-height: 0;
     position: relative;
   }
-  .preview video { width: 100%; height: 100%; object-fit: contain; background: #000; }
-  .preview .empty { color: #444; font-size: 48px; }
+  .preview video { width: 100%; height: 100%; object-fit: contain; background: #000; display: block; }
+  .preview .empty { color: #444; font-size: 40px; }
+  .preview .overlay {
+    position: absolute; top: 8px; left: 8px; background: rgba(0,0,0,.6);
+    padding: 3px 8px; border-radius: 4px; font-size: 10px; color: #fff;
+  }
+  .preview.blackout::after {
+    content: 'BLACKOUT'; position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    background: #000; color: #c0392b; font-weight: 800; letter-spacing: .2em;
+  }
 
-  .scene-meta { display: flex; flex-direction: column; gap: 4px; }
-  .scene-meta .name { font-size: 15px; font-weight: 600; color: #fff; word-break: break-word; }
+  .scene-meta { display: flex; flex-direction: column; gap: 3px; }
+  .scene-meta .label { font-size: 15px; font-weight: 700; color: #fff; }
+  .scene-meta .name { font-size: 11px; color: #888; word-break: break-word; }
   .scene-meta .kind-pill {
     display: inline-block; padding: 3px 10px; border-radius: 20px;
     font-size: 10px; font-weight: 700; text-transform: uppercase; align-self: flex-start;
@@ -82,58 +103,100 @@
   .scene-meta .kind-pill.loop { background: #2d5a2f; color: #a5e6a7; }
   .scene-meta .kind-pill.trans { background: #6b4410; color: #ffd180; }
   .scene-meta .kind-pill.pending { background: #c0392b; color: #fff; animation: pulse 1s infinite; }
+  .scene-meta .notes { font-size: 12px; color: #aaa; background: #0d0d0d; padding: 6px 8px; border-radius: 4px; max-height: 60px; overflow: auto; white-space: pre-wrap; }
   @keyframes pulse { 50% { opacity: .5; } }
 
-  .timebar {
-    width: 100%; height: 6px; background: #222; border-radius: 3px; overflow: hidden;
-  }
-  .timebar .fill { height: 100%; background: #4caf50; width: 0%; transition: width .1s linear; }
+  .timebar { width: 100%; height: 8px; background: #222; border-radius: 4px; overflow: hidden; cursor: pointer; }
+  .timebar .fill { height: 100%; background: #4caf50; width: 0%; transition: width .08s linear; }
   .now.pending .timebar .fill { background: #ff5544; }
   .now.trans .timebar .fill { background: #ff9800; }
-  .time-text { font-size: 12px; color: #aaa; display: flex; justify-content: space-between; }
+  .time-text { font-size: 11px; color: #aaa; display: flex; justify-content: space-between; }
 
   #bigCue {
-    width: 100%; padding: 26px; font-size: 22px; font-weight: 800;
+    width: 100%; padding: 22px; font-size: 22px; font-weight: 800;
     border: none; border-radius: 12px; cursor: pointer;
     background: #e74c3c; color: #fff; box-shadow: 0 6px 24px rgba(231,76,60,.35);
-    transition: transform .08s;
-    letter-spacing: .05em;
+    transition: transform .08s; letter-spacing: .04em;
   }
-  #bigCue:hover { filter: brightness(1.1); }
-  #bigCue:active { transform: scale(.98); }
-  #bigCue:disabled { background: #333; color: #666; box-shadow: none; cursor: not-allowed; }
-  #bigCue .sub { display: block; font-size: 11px; font-weight: 500; opacity: .8; margin-top: 4px; letter-spacing: .1em; }
+  #bigCue:hover:not(:disabled) { filter: brightness(1.1); }
+  #bigCue:active:not(:disabled) { transform: scale(.98); }
+  #bigCue:disabled { background: #2a2a2a; color: #555; box-shadow: none; cursor: not-allowed; }
+  #bigCue.armed { background: #d35400; animation: armedPulse 1s infinite; }
+  @keyframes armedPulse { 50% { box-shadow: 0 6px 40px rgba(243,156,18,.8); } }
+  #bigCue .sub { display: block; font-size: 11px; font-weight: 500; opacity: .85; margin-top: 4px; letter-spacing: .1em; }
 
-  .queue { flex: 0 0 280px; overflow: auto; }
-  .queue .row { padding: 8px 12px; font-size: 12px; cursor: default; }
-  .queue .row.current { background: #1e3a1f; }
+  .queue { flex: 0 0 320px; overflow: hidden; display: flex; flex-direction: column; }
+  #queueList { overflow: auto; display: flex; flex-direction: column; gap: 4px; padding-right: 4px; }
+  .queue .row {
+    padding: 6px 10px; font-size: 12px; cursor: pointer; user-select: none;
+    position: relative;
+  }
+  .queue .row:hover { background: #252525; }
+  .queue .row.current { background: #1e3a1f; box-shadow: inset 3px 0 0 #4caf50; }
   .queue .row.next-up { background: #3a2a1e; }
-  .queue .row .idx-num { color: #666; width: 24px; }
+  .queue .row .idx-num { color: #666; width: 22px; font-variant-numeric: tabular-nums; }
+  .queue .row .lbl { color: #fff; font-weight: 600; }
+  .queue .row .nm { color: #777; font-size: 10px; }
+  .queue .row-content { display: flex; flex-direction: column; flex: 1; min-width: 0; overflow: hidden; }
+  .queue .row-content > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .queue .reorder { display: flex; flex-direction: column; gap: 1px; }
+  .queue .reorder button { padding: 1px 5px; font-size: 9px; }
+
+  .controls-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 
   .statusbar {
-    display: flex; gap: 16px; font-size: 12px; color: #888;
-    padding: 8px 14px; background: #151515; border-radius: 8px; align-items: center;
+    display: flex; gap: 12px; font-size: 11px; color: #888;
+    padding: 6px 12px; background: #151515; border-radius: 8px; align-items: center; flex-wrap: wrap;
   }
   .statusbar .dot { width: 8px; height: 8px; border-radius: 50%; background: #c0392b; }
   .statusbar.ok .dot { background: #27ae60; }
+  .statusbar kbd {
+    background: #2a2a2a; border: 1px solid #3a3a3a; padding: 2px 6px;
+    border-radius: 3px; font-size: 10px; font-family: monospace; color: #ccc;
+  }
+
+  /* volume */
+  .vol { display: flex; align-items: center; gap: 6px; }
+  .vol input[type=range] { width: 100px; }
+
+  /* edit panel for notes/label */
+  #editModal {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,.8);
+    align-items: center; justify-content: center; z-index: 100;
+  }
+  #editModal.show { display: flex; }
+  #editModal .modal {
+    background: #1a1a1a; padding: 20px; border-radius: 10px; width: 400px;
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  #editModal input, #editModal textarea {
+    background: #0d0d0d; border: 1px solid #333; color: #eee;
+    padding: 8px 10px; border-radius: 4px; font-size: 13px; width: 100%;
+  }
+  #editModal textarea { min-height: 80px; resize: vertical; }
+  #editModal label { font-size: 12px; color: #888; }
 
   /* ===== OUTPUT WINDOW ===== */
-  body.output { cursor: none; }
+  body.output { cursor: none; background: #000; }
   body.output #setup, body.output #control { display: none !important; }
-  #outputStage {
-    display: none; position: fixed; inset: 0; background: #000;
-  }
+  #outputStage { display: none; position: fixed; inset: 0; background: #000; }
   body.output #outputStage { display: block; }
   body.output #outputHint {
     position: fixed; top: 10px; left: 10px; color: #666; font-size: 11px;
     background: rgba(0,0,0,.5); padding: 6px 10px; border-radius: 4px;
-    transition: opacity 3s; pointer-events: none;
+    transition: opacity 3s; pointer-events: none; z-index: 10;
   }
+  body:not(.output) #outputHint { display: none; }
   #outputStage video {
     position: absolute; inset: 0; width: 100%; height: 100%;
     object-fit: contain; background: #000; visibility: hidden;
   }
   #outputStage video.show { visibility: visible; }
+  #outputStage .blackout-layer {
+    position: absolute; inset: 0; background: #000; opacity: 0;
+    pointer-events: none; transition: opacity .3s;
+  }
+  #outputStage.blackout .blackout-layer { opacity: 1; }
 </style>
 </head>
 <body>
@@ -142,13 +205,12 @@
 <div id="setup">
   <h1>🎭 Teatro Player</h1>
   <p class="hint">
-    Cargá los videos en <b>orden</b>: loop escena 1, transición 1→2, loop escena 2, transición 2→3, etc.<br>
-    Alterna automáticamente <span style="color:#4caf50">LOOP</span> y <span style="color:#ff9800">TRANSICIÓN</span>.<br>
-    Durante la función se abrirá una <b>ventana de proyección</b> aparte — arrastrala a la pantalla del teatro y ponela en fullscreen (F). El panel de control queda acá.
+    Cargá MP4s en <b>orden</b>: loop escena 1, transición 1→2, loop escena 2, etc.<br>
+    La app alterna automáticamente <span style="color:#4caf50">LOOP</span> y <span style="color:#ff9800">TRANSICIÓN</span>. Podés editar etiquetas, notas, orden, tipo — también durante la función.
   </p>
 
   <label id="drop" for="fileInput">
-    <div style="font-size: 40px;">📁</div>
+    <div style="font-size: 36px;">📁</div>
     <div>Arrastrá MP4s acá o hacé click para elegir</div>
     <input type="file" id="fileInput" multiple accept="video/mp4,video/*">
   </label>
@@ -159,38 +221,54 @@
     <button class="btn success" id="startBtn" disabled>▶ Abrir proyección + empezar</button>
     <button class="btn secondary" id="sortBtn">Ordenar por nombre</button>
     <button class="btn secondary" id="autoBtn">Auto-detectar orden</button>
+    <button class="btn secondary" id="saveBtn">💾 Guardar proyecto</button>
+    <label class="btn secondary" style="cursor:pointer" for="loadInput">📂 Cargar proyecto</label>
+    <input type="file" id="loadInput" accept=".json,application/json" style="display:none">
     <button class="btn danger" id="clearBtn">Limpiar</button>
   </div>
 </div>
 
-<!-- ===== CONTROL VIEW (operator) ===== -->
+<!-- ===== CONTROL VIEW ===== -->
 <div id="control">
   <div class="top">
     <!-- Now playing -->
     <div class="panel now" id="nowPanel">
-      <h3>En vivo ahora</h3>
-      <div class="preview" id="nowPreview"><div class="empty">—</div></div>
+      <h3>En vivo ahora <span id="nowStatus" style="color:#4caf50">●</span></h3>
+      <div class="preview" id="nowPreview">
+        <video id="previewNow" muted playsinline></video>
+      </div>
       <div class="scene-meta">
         <span class="kind-pill loop" id="nowPill">LOOP</span>
-        <div class="name" id="nowName">—</div>
+        <div class="label" id="nowLabel">—</div>
+        <div class="name" id="nowName"></div>
+        <div class="notes" id="nowNotes" style="display:none"></div>
       </div>
-      <div class="timebar"><div class="fill" id="nowFill"></div></div>
+      <div class="timebar" id="timebar"><div class="fill" id="nowFill"></div></div>
       <div class="time-text"><span id="nowTime">0:00</span><span id="nowDur">0:00</span></div>
     </div>
 
     <!-- Next up -->
     <div class="panel next">
       <h3>Próximo</h3>
-      <div class="preview" id="nextPreview"><div class="empty">—</div></div>
+      <div class="preview">
+        <video id="previewNext" muted playsinline></video>
+      </div>
       <div class="scene-meta">
         <span class="kind-pill" id="nextPill">—</span>
-        <div class="name" id="nextName">—</div>
+        <div class="label" id="nextLabel">—</div>
+        <div class="name" id="nextName"></div>
       </div>
     </div>
 
     <!-- Queue -->
     <div class="panel queue">
-      <h3>Secuencia</h3>
+      <h3>
+        Secuencia
+        <label style="cursor:pointer; font-size: 10px; color:#6cf">
+          + agregar videos
+          <input type="file" id="addMoreInput" multiple accept="video/mp4,video/*" style="display:none">
+        </label>
+      </h3>
       <div id="queueList"></div>
     </div>
   </div>
@@ -201,31 +279,61 @@
     <span class="sub">ESPACIO · termina loop + transición + próximo loop</span>
   </button>
 
+  <!-- Controls row -->
+  <div class="controls-row">
+    <button class="btn warn" id="cueNowBtn" title="Saltar a la transición ahora, sin esperar fin del loop">⚡ Cue inmediato</button>
+    <button class="btn secondary" id="prevBtn" title="Escena anterior">◀ Anterior</button>
+    <button class="btn secondary" id="pauseBtn">⏸ Pausar</button>
+    <button class="btn danger" id="blackoutBtn">🔲 Blackout</button>
+    <div class="vol">
+      <span style="font-size:11px;color:#888">🔊</span>
+      <input type="range" id="volSlider" min="0" max="100" value="100">
+      <span id="volLabel" style="font-size:11px;color:#888;width:30px">100</span>
+    </div>
+  </div>
+
   <!-- Status bar -->
   <div class="statusbar" id="statusbar">
     <span class="dot"></span>
     <span id="statusText">Esperando proyección…</span>
     <span style="flex:1"></span>
-    <button class="btn secondary" id="reopenBtn" style="padding:6px 12px;font-size:12px">Reabrir proyección</button>
-    <button class="btn danger" id="stopBtn" style="padding:6px 12px;font-size:12px">■ Terminar</button>
+    <span><kbd>ESPACIO</kbd> cue · <kbd>←</kbd> prev · <kbd>B</kbd> blackout · <kbd>P</kbd> pausa · <kbd>⚡</kbd> cue ya</span>
+    <button class="btn secondary" id="reopenBtn" style="padding:5px 10px;font-size:11px">Reabrir proyección</button>
+    <button class="btn secondary" id="backToSetupBtn" style="padding:5px 10px;font-size:11px">Volver a setup</button>
+    <button class="btn danger" id="stopBtn" style="padding:5px 10px;font-size:11px">■ Terminar</button>
   </div>
 </div>
 
-<!-- ===== OUTPUT STAGE (popup window) ===== -->
+<!-- ===== OUTPUT STAGE ===== -->
 <div id="outputStage">
   <video id="oA" playsinline></video>
   <video id="oB" playsinline></video>
+  <div class="blackout-layer"></div>
 </div>
-<div id="outputHint">Presioná <b>F</b> para pantalla completa</div>
+<div id="outputHint">Presioná <b>F</b> para pantalla completa · Esta ventana es la proyección del teatro</div>
+
+<!-- ===== EDIT MODAL ===== -->
+<div id="editModal">
+  <div class="modal">
+    <h3 style="color:#fff">Editar escena</h3>
+    <label>Etiqueta (opcional)</label>
+    <input id="editLabel" placeholder="ej. Apertura, Monólogo Juan">
+    <label>Notas para el operador</label>
+    <textarea id="editNotes" placeholder="Recordá: esperar aplauso antes de cambiar…"></textarea>
+    <div style="display:flex; gap:8px; justify-content:flex-end">
+      <button class="btn secondary" id="editCancel">Cancelar</button>
+      <button class="btn success" id="editSave">Guardar</button>
+    </div>
+  </div>
+</div>
 
 <script>
-// Determine mode from URL param
 const MODE = new URLSearchParams(location.search).get('mode') || 'control';
 const CHANNEL_ID = new URLSearchParams(location.search).get('ch') || 'teatro-' + Date.now();
 const bus = new BroadcastChannel(CHANNEL_ID);
 
 // ========================================================================
-// OUTPUT MODE — just a fullscreen video player driven by the control window
+// OUTPUT MODE
 // ========================================================================
 if (MODE === 'output') {
   document.body.classList.add('output');
@@ -233,28 +341,35 @@ if (MODE === 'output') {
 
   const oA = document.getElementById('oA');
   const oB = document.getElementById('oB');
+  const stage = document.getElementById('outputStage');
   let active = oA, idle = oB;
   let idx = 0, transitioning = false, advanceRequested = false;
   let filesList = [];
+  let paused = false;
+  let volume = 1;
 
   const hint = document.getElementById('outputHint');
-  setTimeout(() => hint.style.opacity = '0', 4000);
+  setTimeout(() => hint.style.opacity = '0', 5000);
 
   function swap() { [active, idle] = [idle, active]; }
 
   function sendState(extra={}) {
     const cur = filesList[idx];
     bus.postMessage({ type: 'state',
-      idx, advanceRequested, transitioning,
+      idx, advanceRequested, transitioning, paused,
+      blackout: stage.classList.contains('blackout'),
       name: cur?.name, kind: cur?.kind,
       time: active.currentTime || 0,
       duration: active.duration || 0,
       total: filesList.length,
+      volume,
       ...extra
     });
   }
 
   function tryPlay(el) {
+    if (paused) return;
+    el.volume = volume;
     el.play().catch(() => { el.muted = true; el.play().catch(()=>{}); });
   }
 
@@ -265,6 +380,7 @@ if (MODE === 'output') {
     active.src = cur.url;
     active.loop = false;
     active.muted = false;
+    active.volume = volume;
     active.preload = 'auto';
     try { active.currentTime = 0; } catch(e){}
     active.classList.add('show');
@@ -282,18 +398,18 @@ if (MODE === 'output') {
     tryPlay(active);
   }
 
-  function doAdvance() {
+  function doAdvance(immediate=false) {
     if (transitioning) return;
     transitioning = true;
     advanceRequested = false;
     const nextIdx = idx + 1;
     const cur = filesList[idx];
     if (nextIdx >= filesList.length) {
-      if (cur.kind === 'loop') { transitioning = false; doLoopAgain(); return; }
+      if (cur && cur.kind === 'loop') { transitioning = false; doLoopAgain(); return; }
       transitioning = false; bus.postMessage({type:'ended-all'}); return;
     }
     const next = filesList[nextIdx];
-    if (!idle.src || idle.src !== next.url) { idle.src = next.url; }
+    if (!idle.src || !idle.src.endsWith(next.url.split('/').pop())) { idle.src = next.url; }
     idle.currentTime = 0;
     const onPlaying = () => {
       idle.removeEventListener('playing', onPlaying);
@@ -310,6 +426,16 @@ if (MODE === 'output') {
     };
     idle.addEventListener('playing', onPlaying);
     tryPlay(idle);
+  }
+
+  function jumpTo(targetIdx) {
+    if (targetIdx < 0 || targetIdx >= filesList.length) return;
+    transitioning = false; advanceRequested = false;
+    // Swap to idle for a cleaner switch
+    active.classList.remove('show');
+    active.pause();
+    swap();
+    playIndex(targetIdx);
   }
 
   function onEnded(e) {
@@ -341,6 +467,17 @@ if (MODE === 'output') {
     if (m.type === 'load') {
       filesList = m.files;
       bus.postMessage({type:'loaded'});
+    } else if (m.type === 'reorder') {
+      // Live reorder: update filesList but also keep current playback pointer
+      const curFile = filesList[idx];
+      filesList = m.files;
+      // Find where the current file moved to
+      const newIdx = filesList.findIndex(f => f.url === curFile?.url);
+      if (newIdx >= 0) idx = newIdx;
+      // Refresh idle preload to match the new "next"
+      const nextF = filesList[idx + 1];
+      if (nextF && idle.src !== nextF.url) { idle.src = nextF.url; idle.load(); }
+      sendState();
     } else if (m.type === 'start') {
       idx = 0; transitioning = false; advanceRequested = false;
       active = oA; idle = oB;
@@ -352,23 +489,38 @@ if (MODE === 'output') {
         advanceRequested = true;
         sendState();
       }
+    } else if (m.type === 'advance-now') {
+      // Skip to transition immediately, even mid-loop
+      if (!transitioning) doAdvance(true);
+    } else if (m.type === 'prev') {
+      jumpTo(Math.max(0, idx - 1));
+    } else if (m.type === 'jumpTo') {
+      jumpTo(m.idx);
+    } else if (m.type === 'togglePause') {
+      paused = !paused;
+      if (paused) { oA.pause(); oB.pause(); }
+      else tryPlay(active);
+      sendState();
+    } else if (m.type === 'toggleBlackout') {
+      stage.classList.toggle('blackout');
+      sendState();
+    } else if (m.type === 'setVolume') {
+      volume = m.value;
+      oA.volume = volume; oB.volume = volume;
+      sendState();
     } else if (m.type === 'stop') {
-      oA.pause(); oB.pause();
-      oA.src = ''; oB.src = '';
+      oA.pause(); oB.pause(); oA.src = ''; oB.src = '';
       window.close();
     } else if (m.type === 'ping') {
-      bus.postMessage({type:'pong'});
+      bus.postMessage({type:'output-ready'});
     }
   };
 
-  // Announce readiness
   bus.postMessage({type: 'output-ready'});
 
-  // Keyboard
   window.addEventListener('keydown', (e) => {
     if (e.code === 'Space' || e.code === 'Enter') {
       e.preventDefault();
-      bus.postMessage({type:'advance-local'});
       const cur = filesList[idx];
       if (cur && cur.kind === 'loop' && !advanceRequested && !transitioning) {
         advanceRequested = true; sendState();
@@ -376,21 +528,26 @@ if (MODE === 'output') {
     } else if (e.key === 'f' || e.key === 'F') {
       if (!document.fullscreenElement) document.documentElement.requestFullscreen?.();
       else document.exitFullscreen?.();
-    } else if (e.key === 'Escape') {
-      // Don't exit the window, just fullscreen
+    } else if (e.key === 'b' || e.key === 'B') {
+      stage.classList.toggle('blackout'); sendState();
     }
   });
 
 } else {
 // ========================================================================
-// CONTROL MODE — setup + operator panel
+// CONTROL MODE
 // ========================================================================
 
-const files = []; // {file, url, name, kind}
+const files = []; // {file, url, name, kind, label, notes}
+
 const seqEl = document.getElementById('sequence');
 const startBtn = document.getElementById('startBtn');
 const drop = document.getElementById('drop');
 const fileInput = document.getElementById('fileInput');
+
+function sceneLabel(f, i) {
+  return f.label || `Escena ${i+1}`;
+}
 
 function render() {
   seqEl.innerHTML = '';
@@ -399,19 +556,23 @@ function render() {
     row.className = 'row ' + f.kind;
     row.innerHTML = `
       <span class="kind">${f.kind === 'loop' ? 'Loop' : 'Transición'}</span>
+      <input class="label-input" placeholder="Etiqueta" value="${(f.label||'').replace(/"/g,'&quot;')}">
       <span class="name" title="${f.name}">${i+1}. ${f.name}</span>
+      <button data-a="edit" title="Notas">📝</button>
       <button data-a="up">↑</button>
       <button data-a="down">↓</button>
-      <button data-a="toggle">⇄ tipo</button>
+      <button data-a="toggle">⇄</button>
       <button data-a="del">✕</button>
     `;
+    row.querySelector('.label-input').oninput = (e) => { f.label = e.target.value; };
     row.querySelectorAll('button').forEach(b => {
       b.onclick = () => {
         const a = b.dataset.a;
         if (a === 'up' && i > 0) [files[i-1], files[i]] = [files[i], files[i-1]];
         else if (a === 'down' && i < files.length-1) [files[i+1], files[i]] = [files[i], files[i+1]];
         else if (a === 'toggle') f.kind = f.kind === 'loop' ? 'trans' : 'loop';
-        else if (a === 'del') files.splice(i, 1);
+        else if (a === 'del') { URL.revokeObjectURL(f.url); files.splice(i, 1); }
+        else if (a === 'edit') openEdit(i);
         render();
       };
     });
@@ -420,16 +581,18 @@ function render() {
   startBtn.disabled = files.length === 0;
 }
 
-function addFiles(list) {
+function addFiles(list, defaultKind) {
   for (const file of list) {
     if (!file.type.startsWith('video/') && !/\.(mp4|mov|m4v|webm)$/i.test(file.name)) continue;
     files.push({
       file, url: URL.createObjectURL(file),
       name: file.name,
-      kind: files.length % 2 === 0 ? 'loop' : 'trans'
+      kind: defaultKind || (files.length % 2 === 0 ? 'loop' : 'trans'),
+      label: '', notes: ''
     });
   }
   render();
+  if (controlEl.classList.contains('active')) sendFilesUpdate();
 }
 
 fileInput.addEventListener('change', e => addFiles(e.target.files));
@@ -459,8 +622,7 @@ document.getElementById('autoBtn').onclick = () => {
   trans.sort((a, b) => a.from - b.from || a.sub - b.sub);
   const ordered = [];
   for (let i = 0; i < loops.length; i++) {
-    loops[i].f.kind = 'loop';
-    ordered.push(loops[i].f);
+    loops[i].f.kind = 'loop'; ordered.push(loops[i].f);
     const tsForThis = trans.filter(t => t.from === loops[i].idx);
     for (const t of tsForThis) { t.f.kind = 'trans'; ordered.push(t.f); }
   }
@@ -470,20 +632,86 @@ document.getElementById('autoBtn').onclick = () => {
 };
 
 document.getElementById('clearBtn').onclick = () => {
+  if (!confirm('¿Borrar todos los videos cargados?')) return;
   files.forEach(f => URL.revokeObjectURL(f.url));
   files.length = 0; render();
 };
 
-// ==== OPERATOR PANEL ====
+// Save/load project
+document.getElementById('saveBtn').onclick = () => {
+  const project = {
+    version: 1,
+    saved: new Date().toISOString(),
+    scenes: files.map(f => ({ name: f.name, kind: f.kind, label: f.label, notes: f.notes }))
+  };
+  const blob = new Blob([JSON.stringify(project, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'teatro-proyecto.json';
+  a.click();
+};
+
+document.getElementById('loadInput').addEventListener('change', async (e) => {
+  const file = e.target.files[0]; if (!file) return;
+  try {
+    const project = JSON.parse(await file.text());
+    if (!project.scenes) throw new Error('JSON inválido');
+    if (files.length === 0) {
+      alert('Cargá primero los videos MP4, luego cargá el proyecto y va a intentar matchear por nombre.');
+    }
+    // Match by filename
+    const matched = [];
+    const unmatched = [];
+    for (const sc of project.scenes) {
+      const m = files.find(f => f.name === sc.name && !matched.includes(f));
+      if (m) {
+        m.kind = sc.kind; m.label = sc.label || ''; m.notes = sc.notes || '';
+        matched.push(m);
+      } else {
+        unmatched.push(sc.name);
+      }
+    }
+    // Reorder files to match project order
+    const leftover = files.filter(f => !matched.includes(f));
+    files.length = 0;
+    files.push(...matched, ...leftover);
+    render();
+    if (unmatched.length) alert('No se encontraron estos videos:\n' + unmatched.join('\n'));
+  } catch (err) { alert('Error cargando proyecto: ' + err.message); }
+  e.target.value = '';
+});
+
+// Edit modal
+let editIdx = -1;
+function openEdit(i) {
+  editIdx = i;
+  document.getElementById('editLabel').value = files[i].label || '';
+  document.getElementById('editNotes').value = files[i].notes || '';
+  document.getElementById('editModal').classList.add('show');
+}
+document.getElementById('editCancel').onclick = () => document.getElementById('editModal').classList.remove('show');
+document.getElementById('editSave').onclick = () => {
+  if (editIdx < 0) return;
+  files[editIdx].label = document.getElementById('editLabel').value.trim();
+  files[editIdx].notes = document.getElementById('editNotes').value.trim();
+  document.getElementById('editModal').classList.remove('show');
+  render();
+  if (controlEl.classList.contains('active')) { sendFilesUpdate(); updateUI(); }
+};
+
+// ==== OPERATOR CONTROL ====
 const setupEl = document.getElementById('setup');
 const controlEl = document.getElementById('control');
 
-const nowPreview = document.getElementById('nowPreview');
-const nextPreview = document.getElementById('nextPreview');
+const previewNow = document.getElementById('previewNow');
+const previewNext = document.getElementById('previewNext');
 const nowPanel = document.getElementById('nowPanel');
 const nowName = document.getElementById('nowName');
+const nowLabel = document.getElementById('nowLabel');
 const nowPill = document.getElementById('nowPill');
+const nowNotes = document.getElementById('nowNotes');
 const nextName = document.getElementById('nextName');
+const nextLabel = document.getElementById('nextLabel');
 const nextPill = document.getElementById('nextPill');
 const nowFill = document.getElementById('nowFill');
 const nowTimeEl = document.getElementById('nowTime');
@@ -492,6 +720,7 @@ const queueList = document.getElementById('queueList');
 const bigCue = document.getElementById('bigCue');
 const statusbar = document.getElementById('statusbar');
 const statusText = document.getElementById('statusText');
+const nowPreviewEl = document.getElementById('nowPreview');
 
 let outputWin = null;
 let outputReady = false;
@@ -510,10 +739,29 @@ function openOutput() {
   return true;
 }
 
+function sendFilesUpdate() {
+  const payload = files.map(f => ({url: f.url, name: f.name, kind: f.kind, label: f.label, notes: f.notes}));
+  if (currentState) bus.postMessage({type:'reorder', files: payload});
+  else bus.postMessage({type:'load', files: payload});
+}
+
 function fmtTime(s) {
   if (!s || isNaN(s)) return '0:00';
   const m = Math.floor(s/60), sec = Math.floor(s%60);
   return m + ':' + String(sec).padStart(2,'0');
+}
+
+function syncPreview(videoEl, file, isNow) {
+  if (!file) { videoEl.removeAttribute('src'); videoEl.load(); return; }
+  if (videoEl.src !== file.url) {
+    videoEl.src = file.url;
+    videoEl.muted = true;
+    videoEl.loop = isNow; // now-preview loops visually; next-preview freezes on frame 1
+    videoEl.play().catch(()=>{});
+    if (!isNow) {
+      videoEl.addEventListener('loadeddata', () => { videoEl.pause(); videoEl.currentTime = 0.1; }, {once:true});
+    }
+  }
 }
 
 function updateUI() {
@@ -522,23 +770,27 @@ function updateUI() {
   const cur = files[s.idx];
   const next = files[s.idx + 1];
 
-  // Now panel
-  nowName.textContent = cur ? `(${s.idx+1}/${files.length}) ${cur.name}` : '—';
-  if (s.advanceRequested) {
-    nowPill.textContent = 'CAMBIANDO…';
-    nowPill.className = 'kind-pill pending';
-    nowPanel.className = 'panel now pending';
-  } else if (cur?.kind === 'trans') {
-    nowPill.textContent = 'TRANSICIÓN';
-    nowPill.className = 'kind-pill trans';
-    nowPanel.className = 'panel now trans';
-  } else {
-    nowPill.textContent = 'LOOP';
-    nowPill.className = 'kind-pill loop';
-    nowPanel.className = 'panel now';
-  }
+  // Previews
+  syncPreview(previewNow, cur, true);
+  syncPreview(previewNext, next, false);
 
-  // Time bar
+  // Now panel
+  nowLabel.textContent = cur ? sceneLabel(cur, s.idx) : '—';
+  nowName.textContent = cur ? `(${s.idx+1}/${files.length}) ${cur.name}` : '—';
+  if (cur?.notes) { nowNotes.style.display = 'block'; nowNotes.textContent = cur.notes; }
+  else nowNotes.style.display = 'none';
+
+  let cls = 'panel now';
+  if (s.blackout) { nowPill.textContent = 'BLACKOUT'; nowPill.className = 'kind-pill pending'; cls += ' blackout'; nowPreviewEl.classList.add('blackout'); }
+  else {
+    nowPreviewEl.classList.remove('blackout');
+    if (s.paused) { nowPill.textContent = 'PAUSADO'; nowPill.className = 'kind-pill'; cls += ' paused'; }
+    else if (s.advanceRequested) { nowPill.textContent = 'CAMBIANDO…'; nowPill.className = 'kind-pill pending'; cls += ' pending'; }
+    else if (cur?.kind === 'trans') { nowPill.textContent = 'TRANSICIÓN'; nowPill.className = 'kind-pill trans'; cls += ' trans'; }
+    else { nowPill.textContent = 'LOOP'; nowPill.className = 'kind-pill loop'; }
+  }
+  nowPanel.className = cls;
+
   const pct = s.duration ? (s.time / s.duration) * 100 : 0;
   nowFill.style.width = pct + '%';
   nowTimeEl.textContent = fmtTime(s.time);
@@ -546,32 +798,73 @@ function updateUI() {
 
   // Next panel
   if (next) {
+    nextLabel.textContent = sceneLabel(next, s.idx + 1);
     nextName.textContent = next.name;
     nextPill.textContent = next.kind === 'loop' ? 'LOOP' : 'TRANSICIÓN';
     nextPill.className = 'kind-pill ' + next.kind;
   } else {
-    nextName.textContent = '— fin —';
-    nextPill.textContent = 'FIN';
-    nextPill.className = 'kind-pill';
+    nextLabel.textContent = 'Fin'; nextName.textContent = '';
+    nextPill.textContent = '—'; nextPill.className = 'kind-pill';
   }
 
-  // Queue list
+  // Queue
   queueList.innerHTML = '';
   files.forEach((f, i) => {
     const row = document.createElement('div');
-    let cls = 'row ' + f.kind;
-    if (i === s.idx) cls += ' current';
-    else if (i === s.idx + 1) cls += ' next-up';
-    row.className = cls;
-    row.innerHTML = `<span class="idx-num">${i+1}</span><span class="kind">${f.kind==='loop'?'L':'T'}</span><span class="name">${f.name}</span>`;
+    let rowCls = 'row ' + f.kind;
+    if (i === s.idx) rowCls += ' current';
+    else if (i === s.idx + 1) rowCls += ' next-up';
+    row.className = rowCls;
+    row.innerHTML = `
+      <span class="idx-num">${i+1}</span>
+      <span class="kind">${f.kind==='loop'?'L':'T'}</span>
+      <div class="row-content">
+        <span class="lbl">${sceneLabel(f, i)}</span>
+        <span class="nm">${f.name}</span>
+      </div>
+      <div class="reorder">
+        <button data-a="up">↑</button>
+        <button data-a="down">↓</button>
+      </div>
+      <button data-a="toggle" title="Cambiar tipo">⇄</button>
+      <button data-a="edit" title="Editar">📝</button>
+    `;
+    // Click on body jumps to that scene
+    row.querySelector('.row-content').onclick = () => {
+      if (confirm('¿Saltar a "' + sceneLabel(f, i) + '"?')) {
+        bus.postMessage({type:'jumpTo', idx: i});
+      }
+    };
+    row.querySelectorAll('.reorder button, [data-a]').forEach(b => {
+      b.onclick = (ev) => {
+        ev.stopPropagation();
+        const a = b.dataset.a;
+        if (a === 'up' && i > 0) [files[i-1], files[i]] = [files[i], files[i-1]];
+        else if (a === 'down' && i < files.length-1) [files[i+1], files[i]] = [files[i], files[i+1]];
+        else if (a === 'toggle') f.kind = f.kind === 'loop' ? 'trans' : 'loop';
+        else if (a === 'edit') openEdit(i);
+        render();
+        sendFilesUpdate();
+      };
+    });
     queueList.appendChild(row);
   });
 
-  // Cue button
-  bigCue.disabled = !(cur?.kind === 'loop' && !s.advanceRequested && !s.transitioning);
-  if (s.advanceRequested) bigCue.textContent = 'CAMBIANDO — esperando fin del loop…';
-  else if (cur?.kind === 'trans') bigCue.innerHTML = 'TRANSICIÓN EN CURSO <span class="sub">esperá a que termine</span>';
+  // Cue button state
+  const canCue = cur?.kind === 'loop' && !s.advanceRequested && !s.transitioning && !s.paused && !s.blackout;
+  bigCue.disabled = !canCue;
+  bigCue.classList.toggle('armed', s.advanceRequested);
+  if (s.blackout) bigCue.innerHTML = 'BLACKOUT ACTIVO<span class="sub">quitá el blackout para continuar</span>';
+  else if (s.paused) bigCue.innerHTML = 'REPRODUCCIÓN PAUSADA<span class="sub">despausá para continuar</span>';
+  else if (s.advanceRequested) bigCue.innerHTML = 'CAMBIANDO — esperando fin del loop…<span class="sub">el loop completa y dispara la transición</span>';
+  else if (cur?.kind === 'trans') bigCue.innerHTML = 'TRANSICIÓN EN CURSO<span class="sub">esperá al próximo loop</span>';
   else bigCue.innerHTML = 'CAMBIAR ESCENA<span class="sub">ESPACIO · termina loop + transición + próximo loop</span>';
+
+  // Secondary buttons
+  document.getElementById('prevBtn').disabled = s.idx === 0;
+  document.getElementById('pauseBtn').textContent = s.paused ? '▶ Reanudar' : '⏸ Pausar';
+  document.getElementById('blackoutBtn').textContent = s.blackout ? '🔳 Quitar blackout' : '🔲 Blackout';
+  document.getElementById('cueNowBtn').disabled = cur?.kind !== 'loop' || s.transitioning || s.paused;
 }
 
 bus.onmessage = (e) => {
@@ -580,23 +873,20 @@ bus.onmessage = (e) => {
     outputReady = true;
     statusbar.classList.add('ok');
     statusText.textContent = 'Proyección conectada';
-    // (Re)send files
-    bus.postMessage({type:'load', files: files.map(f => ({url: f.url, name: f.name, kind: f.kind}))});
+    bus.postMessage({type:'load', files: files.map(f => ({url: f.url, name: f.name, kind: f.kind, label: f.label, notes: f.notes}))});
   } else if (m.type === 'loaded') {
-    bus.postMessage({type:'start'});
+    if (!currentState) bus.postMessage({type:'start'});
   } else if (m.type === 'state') {
     currentState = m;
     updateUI();
   } else if (m.type === 'ended-all') {
     statusText.textContent = 'Función terminada';
-  } else if (m.type === 'advance-local') {
-    // output window pressed space, just reflect
   }
 };
 
 // Detect output window close
 setInterval(() => {
-  if (outputWin && outputWin.closed) {
+  if (outputWin && outputWin.closed && outputReady) {
     outputReady = false;
     statusbar.classList.remove('ok');
     statusText.textContent = 'Proyección cerrada — reabrí la ventana';
@@ -608,12 +898,19 @@ document.getElementById('startBtn').onclick = () => {
   if (!openOutput()) return;
   setupEl.style.display = 'none';
   controlEl.classList.add('active');
-  // load/start will be triggered when output announces ready
 };
 
 document.getElementById('reopenBtn').onclick = () => {
   if (outputWin && !outputWin.closed) { outputWin.focus(); return; }
   openOutput();
+};
+
+document.getElementById('backToSetupBtn').onclick = () => {
+  setupEl.style.display = 'block';
+  controlEl.classList.remove('active');
+  // Detach previews
+  previewNow.removeAttribute('src'); previewNow.load();
+  previewNext.removeAttribute('src'); previewNext.load();
 };
 
 document.getElementById('stopBtn').onclick = () => {
@@ -624,12 +921,46 @@ document.getElementById('stopBtn').onclick = () => {
 };
 
 bigCue.onclick = () => bus.postMessage({type:'advance'});
+document.getElementById('cueNowBtn').onclick = () => {
+  if (confirm('¿Saltar a la transición YA, cortando el loop actual?')) bus.postMessage({type:'advance-now'});
+};
+document.getElementById('prevBtn').onclick = () => bus.postMessage({type:'prev'});
+document.getElementById('pauseBtn').onclick = () => bus.postMessage({type:'togglePause'});
+document.getElementById('blackoutBtn').onclick = () => bus.postMessage({type:'toggleBlackout'});
+
+const volSlider = document.getElementById('volSlider');
+const volLabel = document.getElementById('volLabel');
+volSlider.oninput = () => {
+  volLabel.textContent = volSlider.value;
+  bus.postMessage({type:'setVolume', value: volSlider.value / 100});
+};
+
+// Click timebar to scrub (only works within current loop iteration)
+document.getElementById('timebar').onclick = (e) => {
+  if (!currentState || !currentState.duration) return;
+  const rect = e.currentTarget.getBoundingClientRect();
+  const pct = (e.clientX - rect.left) / rect.width;
+  // Not implemented in output yet — skipping scrub for safety. TODO if requested.
+};
+
+// Add more files during live
+document.getElementById('addMoreInput').addEventListener('change', e => addFiles(e.target.files));
 
 window.addEventListener('keydown', (e) => {
   if (!controlEl.classList.contains('active')) return;
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
   if (e.code === 'Space' || e.code === 'Enter') {
     e.preventDefault();
     if (!bigCue.disabled) bus.postMessage({type:'advance'});
+  } else if (e.key === 'ArrowLeft') {
+    e.preventDefault(); bus.postMessage({type:'prev'});
+  } else if (e.key === 'b' || e.key === 'B') {
+    bus.postMessage({type:'toggleBlackout'});
+  } else if (e.key === 'p' || e.key === 'P') {
+    bus.postMessage({type:'togglePause'});
+  } else if (e.key === 'n' || e.key === 'N') {
+    // N = cue now (immediate)
+    bus.postMessage({type:'advance-now'});
   }
 });
 
