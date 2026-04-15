@@ -1622,7 +1622,14 @@ bus.onmessage = (e) => {
     hideDisconnect();
     bus.postMessage({type:'load', files: files.map(f => ({file: f.file, url: f.url, name: f.name, kind: f.kind, label: f.label, notes: f.notes, mediaType: f.mediaType}))});
   } else if (m.type === 'loaded') {
-    if (!currentState) bus.postMessage({type:'start'});
+    if (!currentState) {
+      bus.postMessage({type:'start'});
+    } else {
+      // Reconnected mid-show: resume at the current scene instead of starting over
+      bus.postMessage({type:'start'});
+      const resumeIdx = currentState.idx || 0;
+      if (resumeIdx > 0) setTimeout(() => bus.postMessage({type:'jumpTo', idx: resumeIdx}), 60);
+    }
   } else if (m.type === 'state') {
     currentState = m;
     updateUI();
