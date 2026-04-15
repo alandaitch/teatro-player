@@ -5,25 +5,15 @@
 <title>Teatro Player</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  html, body { height: 100%; background: #000; color: #eee; font-family: -apple-system, system-ui, sans-serif; overflow: hidden; }
+  html, body { height: 100%; background: #0d0d0d; color: #eee; font-family: -apple-system, system-ui, sans-serif; overflow: hidden; }
 
-  /* Setup screen */
-  #setup {
-    padding: 24px;
-    height: 100%;
-    overflow: auto;
-    background: #111;
-  }
+  /* ===== SETUP ===== */
+  #setup { padding: 24px; height: 100%; overflow: auto; background: #111; }
   #setup h1 { margin-bottom: 8px; font-size: 22px; }
   #setup p.hint { color: #888; margin-bottom: 20px; font-size: 13px; line-height: 1.5; }
   #drop {
-    border: 2px dashed #444;
-    border-radius: 10px;
-    padding: 30px;
-    text-align: center;
-    margin-bottom: 20px;
-    cursor: pointer;
-    transition: all .15s;
+    border: 2px dashed #444; border-radius: 10px; padding: 30px;
+    text-align: center; margin-bottom: 20px; cursor: pointer; transition: all .15s;
   }
   #drop.over { border-color: #6cf; background: #0a1e2a; }
   #drop input { display: none; }
@@ -43,10 +33,7 @@
   .row.loop .kind { background: #2d5a2f; color: #a5e6a7; }
   .row.trans .kind { background: #6b4410; color: #ffd180; }
   .row .name { flex: 1; font-size: 13px; color: #ccc; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .row button {
-    background: #333; border: none; color: #eee; padding: 4px 8px;
-    border-radius: 4px; cursor: pointer; font-size: 12px;
-  }
+  .row button { background: #333; border: none; color: #eee; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 12px; }
   .row button:hover { background: #444; }
 
   .controls { display: flex; gap: 10px; flex-wrap: wrap; }
@@ -56,62 +43,108 @@
   }
   .btn.secondary { background: #333; }
   .btn.danger { background: #c0392b; }
+  .btn.success { background: #27ae60; }
   .btn:hover { filter: brightness(1.15); }
   .btn:disabled { opacity: .4; cursor: not-allowed; }
 
-  /* Playback screen */
-  #player {
-    display: none; position: fixed; inset: 0; background: #000;
-  }
-  #player.active { display: block; }
-  video {
-    position: absolute; inset: 0; width: 100%; height: 100%;
-    object-fit: contain; background: #000;
-    visibility: hidden;
-  }
-  video.show { visibility: visible; }
+  /* ===== CONTROL PANEL (operator view) ===== */
+  #control { display: none; height: 100%; padding: 16px; gap: 16px; flex-direction: column; background: #0d0d0d; }
+  #control.active { display: flex; }
 
-  #hud {
-    position: fixed; bottom: 16px; left: 16px; right: 16px;
-    display: flex; justify-content: space-between; align-items: center;
-    background: rgba(0,0,0,.55); padding: 10px 16px; border-radius: 8px;
-    color: #fff; font-size: 13px; z-index: 10;
-    backdrop-filter: blur(8px);
-    transition: opacity .3s;
+  #control .top { display: flex; gap: 16px; flex: 1; min-height: 0; }
+  .panel {
+    background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 10px;
+    padding: 14px; display: flex; flex-direction: column; gap: 10px;
+    min-height: 0;
   }
-  #hud.hidden { opacity: 0; pointer-events: none; }
-  #hud .status { display: flex; gap: 16px; align-items: center; }
-  #hud .pill {
-    padding: 4px 10px; border-radius: 20px; font-weight: 600; font-size: 11px;
-    text-transform: uppercase;
+  .panel h3 { font-size: 11px; text-transform: uppercase; color: #888; letter-spacing: .08em; }
+
+  .now, .next { flex: 1; min-width: 0; }
+  .now { border: 2px solid #4caf50; }
+  .now.pending { border-color: #c0392b; animation: pulseBorder 1s infinite; }
+  .now.trans { border-color: #ff9800; }
+  @keyframes pulseBorder { 50% { border-color: #ff5544; } }
+
+  .preview {
+    flex: 1; background: #000; border-radius: 6px; overflow: hidden;
+    display: flex; align-items: center; justify-content: center; min-height: 0;
+    position: relative;
   }
-  .pill.loop { background: #2d5a2f; }
-  .pill.trans { background: #6b4410; }
-  .pill.pending { background: #c0392b; animation: pulse 1s infinite; }
+  .preview video { width: 100%; height: 100%; object-fit: contain; background: #000; }
+  .preview .empty { color: #444; font-size: 48px; }
+
+  .scene-meta { display: flex; flex-direction: column; gap: 4px; }
+  .scene-meta .name { font-size: 15px; font-weight: 600; color: #fff; word-break: break-word; }
+  .scene-meta .kind-pill {
+    display: inline-block; padding: 3px 10px; border-radius: 20px;
+    font-size: 10px; font-weight: 700; text-transform: uppercase; align-self: flex-start;
+  }
+  .scene-meta .kind-pill.loop { background: #2d5a2f; color: #a5e6a7; }
+  .scene-meta .kind-pill.trans { background: #6b4410; color: #ffd180; }
+  .scene-meta .kind-pill.pending { background: #c0392b; color: #fff; animation: pulse 1s infinite; }
   @keyframes pulse { 50% { opacity: .5; } }
 
-  #bigBtn {
-    position: fixed; right: 24px; bottom: 70px;
-    width: 120px; height: 120px; border-radius: 50%;
-    background: #e74c3c; color: white; border: none; cursor: pointer;
-    font-size: 16px; font-weight: 700; z-index: 10;
-    box-shadow: 0 6px 24px rgba(231,76,60,.5);
-    transition: transform .1s;
+  .timebar {
+    width: 100%; height: 6px; background: #222; border-radius: 3px; overflow: hidden;
   }
-  #bigBtn:hover { transform: scale(1.05); }
-  #bigBtn:active { transform: scale(.95); }
-  #bigBtn:disabled { background: #555; box-shadow: none; cursor: not-allowed; }
-  #bigBtn.hidden { opacity: 0; pointer-events: none; transition: opacity .3s; }
+  .timebar .fill { height: 100%; background: #4caf50; width: 0%; transition: width .1s linear; }
+  .now.pending .timebar .fill { background: #ff5544; }
+  .now.trans .timebar .fill { background: #ff9800; }
+  .time-text { font-size: 12px; color: #aaa; display: flex; justify-content: space-between; }
+
+  #bigCue {
+    width: 100%; padding: 26px; font-size: 22px; font-weight: 800;
+    border: none; border-radius: 12px; cursor: pointer;
+    background: #e74c3c; color: #fff; box-shadow: 0 6px 24px rgba(231,76,60,.35);
+    transition: transform .08s;
+    letter-spacing: .05em;
+  }
+  #bigCue:hover { filter: brightness(1.1); }
+  #bigCue:active { transform: scale(.98); }
+  #bigCue:disabled { background: #333; color: #666; box-shadow: none; cursor: not-allowed; }
+  #bigCue .sub { display: block; font-size: 11px; font-weight: 500; opacity: .8; margin-top: 4px; letter-spacing: .1em; }
+
+  .queue { flex: 0 0 280px; overflow: auto; }
+  .queue .row { padding: 8px 12px; font-size: 12px; cursor: default; }
+  .queue .row.current { background: #1e3a1f; }
+  .queue .row.next-up { background: #3a2a1e; }
+  .queue .row .idx-num { color: #666; width: 24px; }
+
+  .statusbar {
+    display: flex; gap: 16px; font-size: 12px; color: #888;
+    padding: 8px 14px; background: #151515; border-radius: 8px; align-items: center;
+  }
+  .statusbar .dot { width: 8px; height: 8px; border-radius: 50%; background: #c0392b; }
+  .statusbar.ok .dot { background: #27ae60; }
+
+  /* ===== OUTPUT WINDOW ===== */
+  body.output { cursor: none; }
+  body.output #setup, body.output #control { display: none !important; }
+  #outputStage {
+    display: none; position: fixed; inset: 0; background: #000;
+  }
+  body.output #outputStage { display: block; }
+  body.output #outputHint {
+    position: fixed; top: 10px; left: 10px; color: #666; font-size: 11px;
+    background: rgba(0,0,0,.5); padding: 6px 10px; border-radius: 4px;
+    transition: opacity 3s; pointer-events: none;
+  }
+  #outputStage video {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    object-fit: contain; background: #000; visibility: hidden;
+  }
+  #outputStage video.show { visibility: visible; }
 </style>
 </head>
 <body>
 
+<!-- ===== SETUP VIEW ===== -->
 <div id="setup">
   <h1>🎭 Teatro Player</h1>
   <p class="hint">
-    Arrastrá los videos en <b>orden</b>: loop de escena 1, transición 1→2, loop escena 2, transición 2→3, etc.<br>
-    La app alterna automáticamente <span style="color:#4caf50">LOOP</span> y <span style="color:#ff9800">TRANSICIÓN</span> según el orden.<br>
-    Durante la función: <b>ESPACIO</b> o <b>click en el botón rojo</b> para cambiar de escena. El loop actual termina, corre la transición, y arranca el próximo loop.
+    Cargá los videos en <b>orden</b>: loop escena 1, transición 1→2, loop escena 2, transición 2→3, etc.<br>
+    Alterna automáticamente <span style="color:#4caf50">LOOP</span> y <span style="color:#ff9800">TRANSICIÓN</span>.<br>
+    Durante la función se abrirá una <b>ventana de proyección</b> aparte — arrastrala a la pantalla del teatro y ponela en fullscreen (F). El panel de control queda acá.
   </p>
 
   <label id="drop" for="fileInput">
@@ -123,28 +156,237 @@
   <div class="sequence" id="sequence"></div>
 
   <div class="controls">
-    <button class="btn" id="startBtn" disabled>▶ Empezar función</button>
+    <button class="btn success" id="startBtn" disabled>▶ Abrir proyección + empezar</button>
     <button class="btn secondary" id="sortBtn">Ordenar por nombre</button>
-    <button class="btn secondary" id="autoBtn">Auto-detectar orden (N_... / t_N_M)</button>
+    <button class="btn secondary" id="autoBtn">Auto-detectar orden</button>
     <button class="btn danger" id="clearBtn">Limpiar</button>
   </div>
 </div>
 
-<div id="player">
-  <video id="vA" playsinline></video>
-  <video id="vB" playsinline></video>
-  <button id="bigBtn">CAMBIAR<br>ESCENA</button>
-  <div id="hud">
-    <div class="status">
-      <span id="pill" class="pill loop">LOOP</span>
-      <span id="info">—</span>
+<!-- ===== CONTROL VIEW (operator) ===== -->
+<div id="control">
+  <div class="top">
+    <!-- Now playing -->
+    <div class="panel now" id="nowPanel">
+      <h3>En vivo ahora</h3>
+      <div class="preview" id="nowPreview"><div class="empty">—</div></div>
+      <div class="scene-meta">
+        <span class="kind-pill loop" id="nowPill">LOOP</span>
+        <div class="name" id="nowName">—</div>
+      </div>
+      <div class="timebar"><div class="fill" id="nowFill"></div></div>
+      <div class="time-text"><span id="nowTime">0:00</span><span id="nowDur">0:00</span></div>
     </div>
-    <div style="color:#aaa;font-size:12px">ESPACIO = cambiar · ESC = salir · H = ocultar HUD</div>
+
+    <!-- Next up -->
+    <div class="panel next">
+      <h3>Próximo</h3>
+      <div class="preview" id="nextPreview"><div class="empty">—</div></div>
+      <div class="scene-meta">
+        <span class="kind-pill" id="nextPill">—</span>
+        <div class="name" id="nextName">—</div>
+      </div>
+    </div>
+
+    <!-- Queue -->
+    <div class="panel queue">
+      <h3>Secuencia</h3>
+      <div id="queueList"></div>
+    </div>
+  </div>
+
+  <!-- Big cue button -->
+  <button id="bigCue" disabled>
+    CAMBIAR ESCENA
+    <span class="sub">ESPACIO · termina loop + transición + próximo loop</span>
+  </button>
+
+  <!-- Status bar -->
+  <div class="statusbar" id="statusbar">
+    <span class="dot"></span>
+    <span id="statusText">Esperando proyección…</span>
+    <span style="flex:1"></span>
+    <button class="btn secondary" id="reopenBtn" style="padding:6px 12px;font-size:12px">Reabrir proyección</button>
+    <button class="btn danger" id="stopBtn" style="padding:6px 12px;font-size:12px">■ Terminar</button>
   </div>
 </div>
 
+<!-- ===== OUTPUT STAGE (popup window) ===== -->
+<div id="outputStage">
+  <video id="oA" playsinline></video>
+  <video id="oB" playsinline></video>
+</div>
+<div id="outputHint">Presioná <b>F</b> para pantalla completa</div>
+
 <script>
-const files = []; // {file, url, name, kind: 'loop'|'trans'}
+// Determine mode from URL param
+const MODE = new URLSearchParams(location.search).get('mode') || 'control';
+const CHANNEL_ID = new URLSearchParams(location.search).get('ch') || 'teatro-' + Date.now();
+const bus = new BroadcastChannel(CHANNEL_ID);
+
+// ========================================================================
+// OUTPUT MODE — just a fullscreen video player driven by the control window
+// ========================================================================
+if (MODE === 'output') {
+  document.body.classList.add('output');
+  document.title = 'Teatro — Proyección';
+
+  const oA = document.getElementById('oA');
+  const oB = document.getElementById('oB');
+  let active = oA, idle = oB;
+  let idx = 0, transitioning = false, advanceRequested = false;
+  let filesList = [];
+
+  const hint = document.getElementById('outputHint');
+  setTimeout(() => hint.style.opacity = '0', 4000);
+
+  function swap() { [active, idle] = [idle, active]; }
+
+  function sendState(extra={}) {
+    const cur = filesList[idx];
+    bus.postMessage({ type: 'state',
+      idx, advanceRequested, transitioning,
+      name: cur?.name, kind: cur?.kind,
+      time: active.currentTime || 0,
+      duration: active.duration || 0,
+      total: filesList.length,
+      ...extra
+    });
+  }
+
+  function tryPlay(el) {
+    el.play().catch(() => { el.muted = true; el.play().catch(()=>{}); });
+  }
+
+  function playIndex(i) {
+    idx = i;
+    const cur = filesList[idx];
+    if (!cur) { bus.postMessage({type:'ended-all'}); return; }
+    active.src = cur.url;
+    active.loop = false;
+    active.muted = false;
+    active.preload = 'auto';
+    try { active.currentTime = 0; } catch(e){}
+    active.classList.add('show');
+    idle.classList.remove('show');
+    tryPlay(active);
+    const onReady = () => { active.removeEventListener('loadeddata', onReady); tryPlay(active); };
+    active.addEventListener('loadeddata', onReady);
+    const next = filesList[idx + 1];
+    if (next) { idle.src = next.url; idle.load(); }
+    sendState();
+  }
+
+  function doLoopAgain() {
+    active.currentTime = 0;
+    tryPlay(active);
+  }
+
+  function doAdvance() {
+    if (transitioning) return;
+    transitioning = true;
+    advanceRequested = false;
+    const nextIdx = idx + 1;
+    const cur = filesList[idx];
+    if (nextIdx >= filesList.length) {
+      if (cur.kind === 'loop') { transitioning = false; doLoopAgain(); return; }
+      transitioning = false; bus.postMessage({type:'ended-all'}); return;
+    }
+    const next = filesList[nextIdx];
+    if (!idle.src || idle.src !== next.url) { idle.src = next.url; }
+    idle.currentTime = 0;
+    const onPlaying = () => {
+      idle.removeEventListener('playing', onPlaying);
+      idle.classList.add('show');
+      active.classList.remove('show');
+      const oldActive = active;
+      swap();
+      idx = nextIdx;
+      setTimeout(() => oldActive.pause(), 100);
+      const after = filesList[idx + 1];
+      if (after) { idle.src = after.url; idle.load(); }
+      transitioning = false;
+      sendState();
+    };
+    idle.addEventListener('playing', onPlaying);
+    tryPlay(idle);
+  }
+
+  function onEnded(e) {
+    if (e.target !== active || transitioning) return;
+    const cur = filesList[idx]; if (!cur) return;
+    if (cur.kind === 'loop' && !advanceRequested) { doLoopAgain(); return; }
+    doAdvance();
+  }
+
+  function onTimeUpdate(e) {
+    if (e.target !== active || transitioning) return;
+    const cur = filesList[idx];
+    if (!cur || !active.duration || isNaN(active.duration)) return;
+    const remaining = active.duration - active.currentTime;
+    if (remaining <= 0.15) {
+      if (cur.kind === 'loop' && !advanceRequested) doLoopAgain();
+      else doAdvance();
+    }
+    sendState();
+  }
+
+  oA.addEventListener('ended', onEnded);
+  oB.addEventListener('ended', onEnded);
+  oA.addEventListener('timeupdate', onTimeUpdate);
+  oB.addEventListener('timeupdate', onTimeUpdate);
+
+  bus.onmessage = (e) => {
+    const m = e.data;
+    if (m.type === 'load') {
+      filesList = m.files;
+      bus.postMessage({type:'loaded'});
+    } else if (m.type === 'start') {
+      idx = 0; transitioning = false; advanceRequested = false;
+      active = oA; idle = oB;
+      oA.classList.remove('show'); oB.classList.remove('show');
+      playIndex(0);
+    } else if (m.type === 'advance') {
+      const cur = filesList[idx];
+      if (cur && cur.kind === 'loop' && !advanceRequested && !transitioning) {
+        advanceRequested = true;
+        sendState();
+      }
+    } else if (m.type === 'stop') {
+      oA.pause(); oB.pause();
+      oA.src = ''; oB.src = '';
+      window.close();
+    } else if (m.type === 'ping') {
+      bus.postMessage({type:'pong'});
+    }
+  };
+
+  // Announce readiness
+  bus.postMessage({type: 'output-ready'});
+
+  // Keyboard
+  window.addEventListener('keydown', (e) => {
+    if (e.code === 'Space' || e.code === 'Enter') {
+      e.preventDefault();
+      bus.postMessage({type:'advance-local'});
+      const cur = filesList[idx];
+      if (cur && cur.kind === 'loop' && !advanceRequested && !transitioning) {
+        advanceRequested = true; sendState();
+      }
+    } else if (e.key === 'f' || e.key === 'F') {
+      if (!document.fullscreenElement) document.documentElement.requestFullscreen?.();
+      else document.exitFullscreen?.();
+    } else if (e.key === 'Escape') {
+      // Don't exit the window, just fullscreen
+    }
+  });
+
+} else {
+// ========================================================================
+// CONTROL MODE — setup + operator panel
+// ========================================================================
+
+const files = []; // {file, url, name, kind}
 const seqEl = document.getElementById('sequence');
 const startBtn = document.getElementById('startBtn');
 const drop = document.getElementById('drop');
@@ -175,7 +417,6 @@ function render() {
     });
     seqEl.appendChild(row);
   });
-  // Auto-assign kinds by position: even index = loop, odd = trans (only if user hasn't manually set)
   startBtn.disabled = files.length === 0;
 }
 
@@ -206,7 +447,6 @@ document.getElementById('sortBtn').onclick = () => {
 };
 
 document.getElementById('autoBtn').onclick = () => {
-  // Parse: loops match /^(\d+)[_\W]/ ; transitions match /^t[_\W]?(\d+)[_\W](\d+)/i
   const loops = [], trans = [];
   for (const f of files) {
     const n = f.name;
@@ -224,7 +464,6 @@ document.getElementById('autoBtn').onclick = () => {
     const tsForThis = trans.filter(t => t.from === loops[i].idx);
     for (const t of tsForThis) { t.f.kind = 'trans'; ordered.push(t.f); }
   }
-  // Append anything not matched
   for (const f of files) if (!ordered.includes(f)) ordered.push(f);
   files.length = 0; files.push(...ordered);
   render();
@@ -235,181 +474,166 @@ document.getElementById('clearBtn').onclick = () => {
   files.length = 0; render();
 };
 
-// ========== PLAYBACK ==========
-const player = document.getElementById('player');
-const vA = document.getElementById('vA');
-const vB = document.getElementById('vB');
-const pill = document.getElementById('pill');
-const info = document.getElementById('info');
-const hud = document.getElementById('hud');
-const bigBtn = document.getElementById('bigBtn');
+// ==== OPERATOR PANEL ====
+const setupEl = document.getElementById('setup');
+const controlEl = document.getElementById('control');
 
-let idx = 0;            // index in files[]
-let advanceRequested = false;
-let active = vA, idle = vB;
+const nowPreview = document.getElementById('nowPreview');
+const nextPreview = document.getElementById('nextPreview');
+const nowPanel = document.getElementById('nowPanel');
+const nowName = document.getElementById('nowName');
+const nowPill = document.getElementById('nowPill');
+const nextName = document.getElementById('nextName');
+const nextPill = document.getElementById('nextPill');
+const nowFill = document.getElementById('nowFill');
+const nowTimeEl = document.getElementById('nowTime');
+const nowDurEl = document.getElementById('nowDur');
+const queueList = document.getElementById('queueList');
+const bigCue = document.getElementById('bigCue');
+const statusbar = document.getElementById('statusbar');
+const statusText = document.getElementById('statusText');
 
-function swap() { [active, idle] = [idle, active]; }
+let outputWin = null;
+let outputReady = false;
+let currentState = null;
 
-function updateHud() {
-  const cur = files[idx];
-  if (!cur) return;
-  pill.className = 'pill ' + (advanceRequested ? 'pending' : cur.kind);
-  pill.textContent = advanceRequested ? 'CAMBIANDO…' : (cur.kind === 'loop' ? 'LOOP' : 'TRANSICIÓN');
-  info.textContent = `(${idx+1}/${files.length}) ${cur.name}`;
-  bigBtn.disabled = cur.kind !== 'loop' || advanceRequested;
-}
-
-function playIndex(i) {
-  idx = i;
-  const cur = files[idx];
-  if (!cur) { exitPlayback(); return; }
-  active.src = cur.url;
-  active.loop = false; // we handle loop manually so we can break out cleanly
-  active.muted = false;
-  active.preload = 'auto';
-  try { active.currentTime = 0; } catch(e){}
-  active.classList.add('show');
-  idle.classList.remove('show');
-  const tryPlay = () => active.play().catch(() => { active.muted = true; active.play().catch(()=>{}); });
-  tryPlay();
-  // Also retry on loadeddata in case initial play failed due to no data yet
-  const onReady = () => { active.removeEventListener('loadeddata', onReady); tryPlay(); };
-  active.addEventListener('loadeddata', onReady);
-  // Preload next into idle
-  const next = files[idx + 1];
-  if (next) { idle.src = next.url; idle.load(); }
-  updateHud();
-}
-
-let transitioning = false;
-
-function doLoopAgain() {
-  active.currentTime = 0;
-  active.play().catch(() => { active.muted = true; active.play(); });
-}
-
-function doAdvance() {
-  if (transitioning) return;
-  transitioning = true;
-  advanceRequested = false;
-  const nextIdx = idx + 1;
-  const cur = files[idx];
-  if (nextIdx >= files.length) {
-    if (cur.kind === 'loop') { transitioning = false; doLoopAgain(); return; }
-    transitioning = false; exitPlayback(); return;
+function openOutput() {
+  outputWin = window.open(
+    location.pathname + '?mode=output&ch=' + CHANNEL_ID,
+    'teatro_output',
+    'width=1280,height=720,menubar=no,toolbar=no,location=no,status=no'
+  );
+  if (!outputWin) {
+    alert('El navegador bloqueó la ventana de proyección. Permití popups para este sitio.');
+    return false;
   }
-  const next = files[nextIdx];
-  // Make sure idle has the right source
-  const nextFile = next.url;
-  if (!idle.src.endsWith(nextFile.split('/').pop()) && idle.src !== nextFile) {
-    idle.src = nextFile;
+  return true;
+}
+
+function fmtTime(s) {
+  if (!s || isNaN(s)) return '0:00';
+  const m = Math.floor(s/60), sec = Math.floor(s%60);
+  return m + ':' + String(sec).padStart(2,'0');
+}
+
+function updateUI() {
+  const s = currentState;
+  if (!s) return;
+  const cur = files[s.idx];
+  const next = files[s.idx + 1];
+
+  // Now panel
+  nowName.textContent = cur ? `(${s.idx+1}/${files.length}) ${cur.name}` : '—';
+  if (s.advanceRequested) {
+    nowPill.textContent = 'CAMBIANDO…';
+    nowPill.className = 'kind-pill pending';
+    nowPanel.className = 'panel now pending';
+  } else if (cur?.kind === 'trans') {
+    nowPill.textContent = 'TRANSICIÓN';
+    nowPill.className = 'kind-pill trans';
+    nowPanel.className = 'panel now trans';
+  } else {
+    nowPill.textContent = 'LOOP';
+    nowPill.className = 'kind-pill loop';
+    nowPanel.className = 'panel now';
   }
-  idle.currentTime = 0;
-  const playPromise = idle.play();
-  const onPlaying = () => {
-    idle.removeEventListener('playing', onPlaying);
-    idle.classList.add('show');
-    active.classList.remove('show');
-    // Pause old active to save resources
-    const oldActive = active;
-    swap();
-    idx = nextIdx;
-    setTimeout(() => oldActive.pause(), 100);
-    // Preload the one after
-    const after = files[idx + 1];
-    if (after) { idle.src = after.url; idle.load(); }
-    updateHud();
-    transitioning = false;
-  };
-  idle.addEventListener('playing', onPlaying);
-  if (playPromise) playPromise.catch(() => { idle.muted = true; idle.play(); });
-}
 
-function onEnded(e) {
-  if (e.target !== active || transitioning) return;
-  const cur = files[idx];
-  if (!cur) return;
-  if (cur.kind === 'loop' && !advanceRequested) { doLoopAgain(); return; }
-  doAdvance();
-}
+  // Time bar
+  const pct = s.duration ? (s.time / s.duration) * 100 : 0;
+  nowFill.style.width = pct + '%';
+  nowTimeEl.textContent = fmtTime(s.time);
+  nowDurEl.textContent = fmtTime(s.duration);
 
-function onTimeUpdate(e) {
-  if (e.target !== active || transitioning) return;
-  const cur = files[idx];
-  if (!cur || !active.duration || isNaN(active.duration)) return;
-  const remaining = active.duration - active.currentTime;
-  // Anticipate end 150ms early for a smoother handoff
-  if (remaining <= 0.15) {
-    if (cur.kind === 'loop' && !advanceRequested) {
-      doLoopAgain();
-    } else {
-      doAdvance();
-    }
+  // Next panel
+  if (next) {
+    nextName.textContent = next.name;
+    nextPill.textContent = next.kind === 'loop' ? 'LOOP' : 'TRANSICIÓN';
+    nextPill.className = 'kind-pill ' + next.kind;
+  } else {
+    nextName.textContent = '— fin —';
+    nextPill.textContent = 'FIN';
+    nextPill.className = 'kind-pill';
   }
+
+  // Queue list
+  queueList.innerHTML = '';
+  files.forEach((f, i) => {
+    const row = document.createElement('div');
+    let cls = 'row ' + f.kind;
+    if (i === s.idx) cls += ' current';
+    else if (i === s.idx + 1) cls += ' next-up';
+    row.className = cls;
+    row.innerHTML = `<span class="idx-num">${i+1}</span><span class="kind">${f.kind==='loop'?'L':'T'}</span><span class="name">${f.name}</span>`;
+    queueList.appendChild(row);
+  });
+
+  // Cue button
+  bigCue.disabled = !(cur?.kind === 'loop' && !s.advanceRequested && !s.transitioning);
+  if (s.advanceRequested) bigCue.textContent = 'CAMBIANDO — esperando fin del loop…';
+  else if (cur?.kind === 'trans') bigCue.innerHTML = 'TRANSICIÓN EN CURSO <span class="sub">esperá a que termine</span>';
+  else bigCue.innerHTML = 'CAMBIAR ESCENA<span class="sub">ESPACIO · termina loop + transición + próximo loop</span>';
 }
 
-vA.addEventListener('ended', onEnded);
-vB.addEventListener('ended', onEnded);
-vA.addEventListener('timeupdate', onTimeUpdate);
-vB.addEventListener('timeupdate', onTimeUpdate);
+bus.onmessage = (e) => {
+  const m = e.data;
+  if (m.type === 'output-ready') {
+    outputReady = true;
+    statusbar.classList.add('ok');
+    statusText.textContent = 'Proyección conectada';
+    // (Re)send files
+    bus.postMessage({type:'load', files: files.map(f => ({url: f.url, name: f.name, kind: f.kind}))});
+  } else if (m.type === 'loaded') {
+    bus.postMessage({type:'start'});
+  } else if (m.type === 'state') {
+    currentState = m;
+    updateUI();
+  } else if (m.type === 'ended-all') {
+    statusText.textContent = 'Función terminada';
+  } else if (m.type === 'advance-local') {
+    // output window pressed space, just reflect
+  }
+};
 
-function requestAdvance() {
-  const cur = files[idx];
-  if (!cur || cur.kind !== 'loop' || advanceRequested) return;
-  advanceRequested = true;
-  updateHud();
-}
-
-function exitPlayback() {
-  player.classList.remove('active');
-  vA.pause(); vB.pause();
-  vA.src = ''; vB.src = '';
-  document.exitFullscreen?.().catch(() => {});
-}
+// Detect output window close
+setInterval(() => {
+  if (outputWin && outputWin.closed) {
+    outputReady = false;
+    statusbar.classList.remove('ok');
+    statusText.textContent = 'Proyección cerrada — reabrí la ventana';
+  }
+}, 500);
 
 document.getElementById('startBtn').onclick = () => {
   if (!files.length) return;
-  player.classList.add('active');
-  // Reset all state
-  idx = 0; advanceRequested = false; transitioning = false;
-  active = vA; idle = vB;
-  vA.classList.remove('show'); vB.classList.remove('show');
-  // Play SYNCHRONOUSLY within the click gesture (critical for autoplay + audio)
-  playIndex(0);
-  // Fullscreen AFTER play starts, non-blocking
-  player.requestFullscreen?.().catch(() => {});
+  if (!openOutput()) return;
+  setupEl.style.display = 'none';
+  controlEl.classList.add('active');
+  // load/start will be triggered when output announces ready
 };
 
-bigBtn.onclick = requestAdvance;
+document.getElementById('reopenBtn').onclick = () => {
+  if (outputWin && !outputWin.closed) { outputWin.focus(); return; }
+  openOutput();
+};
 
-let hudHidden = false;
-document.addEventListener('keydown', e => {
-  if (!player.classList.contains('active')) return;
-  if (e.code === 'Space' || e.code === 'Enter' || e.code === 'ArrowRight') {
-    e.preventDefault(); requestAdvance();
-  } else if (e.code === 'Escape') {
-    exitPlayback();
-  } else if (e.key === 'h' || e.key === 'H') {
-    hudHidden = !hudHidden;
-    hud.classList.toggle('hidden', hudHidden);
-    bigBtn.classList.toggle('hidden', hudHidden);
+document.getElementById('stopBtn').onclick = () => {
+  if (confirm('¿Terminar la función?')) {
+    bus.postMessage({type:'stop'});
+    setTimeout(() => location.reload(), 300);
+  }
+};
+
+bigCue.onclick = () => bus.postMessage({type:'advance'});
+
+window.addEventListener('keydown', (e) => {
+  if (!controlEl.classList.contains('active')) return;
+  if (e.code === 'Space' || e.code === 'Enter') {
+    e.preventDefault();
+    if (!bigCue.disabled) bus.postMessage({type:'advance'});
   }
 });
 
-// Auto-hide HUD after inactivity
-let hideTimer;
-function resetHide() {
-  if (hudHidden) return;
-  hud.classList.remove('hidden');
-  bigBtn.classList.remove('hidden');
-  clearTimeout(hideTimer);
-  hideTimer = setTimeout(() => {
-    hud.classList.add('hidden');
-    // Keep button visible always — it's the main control
-  }, 3000);
-}
-document.addEventListener('mousemove', resetHide);
-document.addEventListener('keydown', resetHide);
+} // end control mode
 </script>
 </body>
 </html>
