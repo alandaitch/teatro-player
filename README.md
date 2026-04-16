@@ -2,16 +2,19 @@
 
 Reproductor de video para teatro en vivo. Un archivo HTML, abrís en el navegador, arrastrás tus loops y transiciones, y cambiás de escena apretando ESPACIO.
 
-Alternativa gratuita y liviana a software profesional como QLab (US$1400+) para el caso específico de **loops + transiciones controladas por operador**.
+Alternativa gratuita y liviana a software profesional como **QLab (US$1400+)** para el caso específico de **loops + transiciones controladas por operador**.
+
+Lo armé para la obra de teatro sobre la historia de la tecnología que estoy preparando con **Felipe Pigna** (9 de junio de 2026). Lo dejo acá público por si le sirve a alguien más.
 
 ---
 
-## Advertencias
+## ⚠️ Advertencias — leé esto antes de usarlo
 
-- **Proyecto personal, sin mantenimiento garantizado.** Lo armé para una necesidad puntual. Si encontrás un bug, podés abrir un issue o forkear — pero no prometo responder.
+- **Proyecto personal, cero mantenimiento.** No hay soporte, no hay roadmap, los issues y pull requests probablemente no los mire. Si encontrás un bug, forkealo y arreglalo vos.
+- **Úsalo bajo tu propio riesgo.** Probá MUCHO antes de ponerlo frente a público que pagó una entrada. Yo no me hago cargo si se cae en tu función.
 - Probado en Chrome y Safari en macOS. En Windows/Linux *debería* andar pero no lo testeé.
 - Depende de que tu navegador pueda decodificar los códecs de tus videos. Si un video anda en QuickTime pero no en el player, probá re-encodearlo a H.264/MP4.
-- **No es QLab.** No hace audio cues, MIDI, OSC, ni sincronización multi-máquina. Es un reproductor de video, punto.
+- **No es QLab.** No hace audio cues, MIDI, OSC, ni sincronización multi-máquina. Es un reproductor de video, punto. Si necesitás algo profesional, gastá los US$1400.
 - Todos los archivos quedan en tu máquina — no se sube nada a ningún servidor.
 
 ---
