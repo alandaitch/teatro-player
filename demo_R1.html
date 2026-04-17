@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Demo R1 autoplay</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #0c0c0c; color: #e8e4d8; font-family: monospace; height: 100vh; overflow: hidden; }
+  .header { padding: 8px 16px; font-size: 12px; letter-spacing: 0.2em; text-transform: uppercase; color: #888; border-bottom: 1px solid #222; }
+  .panel { display: grid; grid-template-columns: 1fr 1fr 260px; gap: 1px; background: #222; height: calc(100vh - 140px); }
+  .pv { background: #0c0c0c; padding: 10px; display: flex; flex-direction: column; position: relative; overflow: hidden; }
+  .pv .label { font-size: 10px; letter-spacing: 0.25em; color: #888; margin-bottom: 6px; text-transform: uppercase; }
+  .pv video { width: 100%; flex: 1; object-fit: contain; background: #000; }
+  .pv .pill { display: inline-block; padding: 3px 10px; font-size: 11px; font-weight: 700; letter-spacing: 0.15em; color: #0c0c0c; margin-top: 8px; text-transform: uppercase; }
+  .pill.loop { background: #7d9b4e; }
+  .pill.trans { background: #d49c3d; }
+  .queue { background: #0c0c0c; padding: 10px; font-size: 12px; }
+  .queue .row { padding: 6px 8px; border-left: 3px solid transparent; opacity: 0.5; transition: opacity 0.2s, border-color 0.2s; display: flex; align-items: center; gap: 8px; }
+  .queue .row.current { opacity: 1; border-left-color: #c33b3b; background: #1a1a1a; }
+  .queue .row .num { color: #666; width: 20px; }
+  .queue .row .mini-pill { font-size: 9px; padding: 2px 6px; color: #0c0c0c; font-weight: 700; }
+  .queue .row .name { flex: 1; color: #aaa; font-size: 11px; }
+  .bar { background: #2a2a2a; padding: 20px; text-align: center; letter-spacing: 0.3em; text-transform: uppercase; font-size: 14px; color: #888; }
+  .ctl { display: flex; gap: 8px; padding: 10px 16px; background: #0c0c0c; border-top: 1px solid #222; }
+  .btn { padding: 10px 18px; background: #d49c3d; color: #0c0c0c; border: 0; font-family: monospace; font-weight: 700; letter-spacing: 0.15em; font-size: 12px; text-transform: uppercase; }
+  .btn.pulse { animation: pulse 0.5s ease-in-out infinite alternate; }
+  @keyframes pulse { to { background: #e8b751; transform: scale(1.04); } }
+</style>
+</head>
+<body>
+<div class="header">● EN VIVO · CUE · PROYECCIÓN · LIBRETO</div>
+<div class="panel">
+  <div class="pv">
+    <div class="label">En escena · ahora</div>
+    <video id="now" muted playsinline></video>
+    <div><span id="pill_now" class="pill loop">LOOP</span></div>
+  </div>
+  <div class="pv">
+    <div class="label">En espera · siguiente</div>
+    <video id="next" muted playsinline></video>
+    <div><span id="pill_next" class="pill trans">TRANSICIÓN</span></div>
+  </div>
+  <div class="queue">
+    <div class="label" style="margin-bottom: 12px; font-size: 10px; letter-spacing: 0.25em; color: #888;">LIBRETO · SECUENCIA</div>
+    <div class="row current" data-i="0"><span class="num">01</span><span class="mini-pill" style="background:#7d9b4e;">L</span><span class="name">Escena 1 · 1_loop.mp4</span></div>
+    <div class="row" data-i="1"><span class="num">02</span><span class="mini-pill" style="background:#d49c3d;">T</span><span class="name">Transición 1→2 · t_1_2.mp4</span></div>
+    <div class="row" data-i="2"><span class="num">03</span><span class="mini-pill" style="background:#7d9b4e;">L</span><span class="name">Escena 2 · 2_loop.mp4</span></div>
+    <div class="row" data-i="3"><span class="num">04</span><span class="mini-pill" style="background:#d49c3d;">T</span><span class="name">Transición 2→3 · t_2_3.mp4</span></div>
+    <div class="row" data-i="4"><span class="num">05</span><span class="mini-pill" style="background:#7d9b4e;">L</span><span class="name">Escena 3 · 3_loop.mp4</span></div>
+  </div>
+</div>
+<div class="bar" id="bar">ESPACIO · TERMINA LOOP + TRANSICIÓN + PRÓXIMO LOOP</div>
+<div class="ctl">
+  <button id="cueBtn" class="btn pulse">▶ CORTAR LOOP · PASAR YA</button>
+  <span style="padding: 10px; color: #666; font-size: 11px;">ESPACIO cue · ← prev · B blackout</span>
+</div>
+<script>
+const nowV = document.getElementById('now');
+const nextV = document.getElementById('next');
+const pillNow = document.getElementById('pill_now');
+const pillNext = document.getElementById('pill_next');
+const rows = document.querySelectorAll('.queue .row');
+
+function setScene(idx, kindNow, srcNow, kindNext, srcNext) {
+  rows.forEach((r, i) => r.classList.toggle('current', i === idx));
+  pillNow.className = 'pill ' + kindNow;
+  pillNow.textContent = kindNow === 'loop' ? 'LOOP' : 'TRANSICIÓN';
+  pillNext.className = 'pill ' + kindNext;
+  pillNext.textContent = kindNext === 'loop' ? 'LOOP' : 'TRANSICIÓN';
+  nowV.src = 'test_videos/' + srcNow;
+  nowV.loop = (kindNow === 'loop');
+  nextV.src = 'test_videos/' + srcNext;
+  nowV.play().catch(()=>{});
+}
+
+// Initial state: loop 1 playing, next is transición 1→2
+setScene(0, 'loop', '1_loop.mp4', 'trans', 't_1_2.mp4');
+
+// Wait for user signal to start demo (use URL hash to trigger)
+// Default: wait until hash changes to #start or window gets signal
+// Infinite loop of cue sequence
+const sequence = [
+  { i: 0, kn: 'loop',  sn: '1_loop.mp4', kx: 'trans', sx: 't_1_2.mp4', bar: 'ESPACIO · TERMINA LOOP + TRANSICIÓN + PRÓXIMO LOOP' },
+  { i: 1, kn: 'trans', sn: 't_1_2.mp4',  kx: 'loop',  sx: '2_loop.mp4', bar: '▶ TRANSICIÓN CORRIENDO' },
+  { i: 2, kn: 'loop',  sn: '2_loop.mp4', kx: 'trans', sx: 't_2_3.mp4', bar: 'ESPACIO · TERMINA LOOP + TRANSICIÓN + PRÓXIMO LOOP' },
+  { i: 3, kn: 'trans', sn: 't_2_3.mp4',  kx: 'loop',  sx: '3_loop.mp4', bar: '▶ TRANSICIÓN CORRIENDO' },
+];
+let step = 0;
+function advance() {
+  const s = sequence[step % sequence.length];
+  setScene(s.i, s.kn, s.sn, s.kx, s.sx);
+  document.getElementById('bar').textContent = s.bar;
+  step++;
+}
+advance(); // immediate first state
+setInterval(advance, 3000);
+</script>
+</body>
+</html>

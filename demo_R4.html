@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Demo R4 peek</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #0c0c0c; color: #e8e4d8; font-family: monospace; height: 100vh; overflow: hidden; }
+  .hdr { padding: 8px 16px; font-size: 12px; letter-spacing: 0.2em; text-transform: uppercase; color: #888; border-bottom: 1px solid #222; }
+  .panel { display: grid; grid-template-columns: 1fr 1fr 260px; gap: 1px; background: #222; height: calc(100vh - 140px); }
+  .pv { background: #0c0c0c; padding: 10px; position: relative; display: flex; flex-direction: column; }
+  .pv .label { font-size: 10px; letter-spacing: 0.25em; color: #888; margin-bottom: 6px; text-transform: uppercase; }
+  .pv video { width: 100%; flex: 1; object-fit: contain; background: #000; }
+  .pv .pill { display: inline-block; padding: 3px 10px; font-size: 11px; font-weight: 700; letter-spacing: 0.15em; color: #0c0c0c; margin-top: 8px; text-transform: uppercase; }
+  .pill.loop { background: #7d9b4e; }
+  .pill.trans { background: #d49c3d; }
+  .peek-hint {
+    position: absolute;
+    left: 50%; bottom: 60px; transform: translateX(-50%);
+    background: rgba(211,156,61,0.12); color: #d49c3d;
+    border: 1px solid rgba(211,156,61,0.5);
+    padding: 8px 14px; font-size: 11px; letter-spacing: 0.15em; text-transform: uppercase;
+    pointer-events: none; transition: opacity 0.3s;
+  }
+  .ripple {
+    position: absolute; left: 50%; top: 50%;
+    width: 20px; height: 20px; border-radius: 50%;
+    background: rgba(255,255,255,0.6);
+    transform: translate(-50%,-50%) scale(1);
+    pointer-events: none;
+    opacity: 0;
+  }
+  .cursor {
+    position: fixed; width: 18px; height: 18px;
+    border-radius: 50%; background: rgba(255,255,255,0.9);
+    border: 2px solid #c33b3b;
+    pointer-events: none; z-index: 100;
+    transition: left 0.8s cubic-bezier(.3,.05,.3,1), top 0.8s cubic-bezier(.3,.05,.3,1);
+    box-shadow: 0 0 12px rgba(195,59,59,0.6);
+  }
+  .queue { padding: 10px; background: #0c0c0c; font-size: 12px; }
+  .queue .row { padding: 6px 8px; opacity: 0.5; display: flex; gap: 8px; }
+  .queue .row.current { opacity: 1; background: #1a1a1a; border-left: 3px solid #7d9b4e; padding-left: 5px; }
+  .queue .num { color: #666; width: 20px; }
+  .queue .mini { font-size: 9px; padding: 2px 6px; color: #0c0c0c; font-weight: 700; }
+  .queue .name { color: #aaa; font-size: 11px; }
+  .bar { background: #2a2a2a; padding: 20px; text-align: center; letter-spacing: 0.3em; text-transform: uppercase; font-size: 14px; color: #888; }
+</style>
+</head>
+<body>
+<div class="hdr">● EN VIVO · CUE · PROYECCIÓN</div>
+<div class="panel">
+  <div class="pv">
+    <div class="label">En escena · ahora</div>
+    <video id="now" src="test_videos/1_loop.mp4" muted loop autoplay playsinline></video>
+    <div><span class="pill loop">LOOP</span></div>
+  </div>
+  <div class="pv" id="nextWrap">
+    <div class="label">En espera · siguiente</div>
+    <video id="next" src="test_videos/t_1_2.mp4" muted playsinline></video>
+    <div><span class="pill trans">TRANSICIÓN</span></div>
+    <div class="peek-hint" id="hint">▶ click para previsualizar (sin audio)</div>
+  </div>
+  <div class="queue">
+    <div class="row current"><span class="num">01</span><span class="mini" style="background:#7d9b4e;">L</span><span class="name">1_loop.mp4</span></div>
+    <div class="row"><span class="num">02</span><span class="mini" style="background:#d49c3d;">T</span><span class="name">t_1_2.mp4</span></div>
+    <div class="row"><span class="num">03</span><span class="mini" style="background:#7d9b4e;">L</span><span class="name">2_loop.mp4</span></div>
+    <div class="row"><span class="num">04</span><span class="mini" style="background:#d49c3d;">T</span><span class="name">t_2_3.mp4</span></div>
+    <div class="row"><span class="num">05</span><span class="mini" style="background:#7d9b4e;">L</span><span class="name">3_loop.mp4</span></div>
+  </div>
+</div>
+<div class="bar">ESPACIO · TERMINA LOOP + TRANSICIÓN + PRÓXIMO LOOP</div>
+<div class="cursor" id="cursor" style="left: 100px; top: 600px;"></div>
+
+<script>
+const cur = document.getElementById('cursor');
+const next = document.getElementById('next');
+const hint = document.getElementById('hint');
+const nextWrap = document.getElementById('nextWrap');
+
+async function doPeek() {
+  // move cursor to center of next preview
+  const r = nextWrap.getBoundingClientRect();
+  cur.style.left = (r.left + r.width/2 - 9) + 'px';
+  cur.style.top = (r.top + r.height/2 - 9) + 'px';
+  await new Promise(r => setTimeout(r, 900));
+
+  // simulate click ripple
+  const ripple = document.createElement('div');
+  ripple.className = 'ripple';
+  const cx = r.width/2;
+  const cy = r.height/2;
+  ripple.style.left = cx + 'px';
+  ripple.style.top = cy + 'px';
+  ripple.style.transition = 'transform 0.6s, opacity 0.6s';
+  nextWrap.appendChild(ripple);
+  requestAnimationFrame(() => {
+    ripple.style.opacity = '1';
+    ripple.style.transform = 'translate(-50%,-50%) scale(12)';
+    setTimeout(() => ripple.style.opacity = '0', 300);
+  });
+
+  // fade hint, start playback
+  hint.style.opacity = '0';
+  next.play().catch(()=>{});
+
+  await new Promise(r => setTimeout(r, 800));
+  ripple.remove();
+
+  // run for a while
+  await new Promise(r => setTimeout(r, 2500));
+
+  // reset: pause, restore hint, reset cursor
+  next.pause();
+  next.currentTime = 0;
+  hint.style.opacity = '1';
+  cur.style.left = '100px';
+  cur.style.top = '600px';
+  await new Promise(r => setTimeout(r, 1500));
+}
+
+async function cycle() {
+  await new Promise(r => setTimeout(r, 800));
+  while (true) {
+    await doPeek();
+  }
+}
+cycle();
+</script>
+</body>
+</html>

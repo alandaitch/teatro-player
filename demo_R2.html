@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Demo R2 drag-reorder</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono:wght@400;700&display=swap');
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #0c0c0c; color: #e8e4d8; font-family: 'JetBrains Mono', monospace; min-height: 100vh; padding: 24px 40px; }
+  .mark { font-family: 'EB Garamond', serif; font-size: 42px; font-weight: 700; margin-bottom: 4px; }
+  .mark .amp { color: #c33b3b; font-style: italic; }
+  .tag { font-size: 11px; letter-spacing: 0.3em; color: #888; text-transform: uppercase; margin-bottom: 28px; }
+  .hint { font-size: 13px; color: #999; line-height: 1.6; margin-bottom: 20px; max-width: 700px; }
+  .hint b { color: #e8e4d8; }
+  .hint .loop { color: #7d9b4e; font-weight: 700; }
+  .hint .trans { color: #d49c3d; font-weight: 700; }
+  .list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px; position: relative; }
+  .row { display: grid; grid-template-columns: 24px 90px 38px 1fr 100px 32px; gap: 10px; padding: 10px 12px; background: rgba(255,255,255,0.02); border-left: 3px solid #7d9b4e; border-radius: 2px; align-items: center; font-size: 13px; transition: transform 0.2s, border-color 0.2s, background 0.2s; position: relative; }
+  .row.trans { border-left-color: #d49c3d; }
+  .row .handle { color: #666; cursor: grab; font-size: 16px; letter-spacing: -2px; user-select: none; }
+  .row .pill { padding: 4px 10px; font-size: 11px; font-weight: 700; letter-spacing: 0.1em; color: #0c0c0c; text-align: center; border-radius: 2px; }
+  .pill.loop { background: #7d9b4e; }
+  .pill.trans { background: #d49c3d; }
+  .row .vid { background: #222; color: #aaa; font-size: 10px; padding: 2px 6px; border-radius: 2px; text-align: center; }
+  .row .name { color: #ccc; }
+  .row .notes { background: rgba(255,255,255,0.04); border: 1px solid #333; padding: 4px 8px; color: #999; font-size: 11px; border-radius: 2px; text-align: center; }
+  .row .rm { background: transparent; border: 1px solid #333; color: #888; cursor: pointer; padding: 4px 8px; border-radius: 2px; }
+  .row.dragging { opacity: 0.65; box-shadow: 0 16px 40px rgba(0,0,0,0.6); background: #1a1410; z-index: 10; }
+  .row.drag-over-top { box-shadow: inset 0 3px 0 0 #c33b3b; }
+  .row.drag-over-bottom { box-shadow: inset 0 -3px 0 0 #c33b3b; }
+  .hdr { padding: 16px 0; font-size: 12px; letter-spacing: 0.25em; color: #888; text-transform: uppercase; text-align: center; border-top: 1px solid #222; margin-top: 20px; }
+</style>
+</head>
+<body>
+<div class="mark">Teatro<span class="amp">&</span>Player</div>
+<div class="tag">● EN VIVO · CUE · PROYECCIÓN</div>
+<div class="hint">Cargá los archivos en <b>orden de función</b>: <span class="loop">LOOP</span> de escena 1, <span class="trans">TRANSICIÓN</span> 1→2, <span class="loop">LOOP</span> de escena 2, y así. Podés <b>arrastrar para reordenar</b>, hacer click en el pill para cambiar tipo, y editar etiquetas y notas.</div>
+
+<div class="list" id="list">
+  <div class="row" data-i="0"><span class="handle">⋮⋮</span><span class="pill loop">LOOP</span><span class="vid">VID</span><span class="name">1. 1_loop.mp4 · Escena 1</span><span class="notes">Notas</span><button class="rm">×</button></div>
+  <div class="row trans" data-i="1"><span class="handle">⋮⋮</span><span class="pill trans">TRANSICIÓN</span><span class="vid">VID</span><span class="name">2. t_1_2.mp4 · Transición 1→2</span><span class="notes">Notas</span><button class="rm">×</button></div>
+  <div class="row" data-i="2"><span class="handle">⋮⋮</span><span class="pill loop">LOOP</span><span class="vid">VID</span><span class="name">3. 2_loop.mp4 · Escena 2</span><span class="notes">Notas</span><button class="rm">×</button></div>
+  <div class="row trans" data-i="3"><span class="handle">⋮⋮</span><span class="pill trans">TRANSICIÓN</span><span class="vid">VID</span><span class="name">4. t_2_3.mp4 · Transición 2→3</span><span class="notes">Notas</span><button class="rm">×</button></div>
+  <div class="row" data-i="4"><span class="handle">⋮⋮</span><span class="pill loop">LOOP</span><span class="vid">VID</span><span class="name">5. 3_loop.mp4 · Escena 3</span><span class="notes">Notas</span><button class="rm">×</button></div>
+</div>
+
+<div class="hdr">ARRASTRÁ VIDEOS O IMÁGENES ACÁ · O HACÉ CLICK</div>
+
+<script>
+const list = document.getElementById('list');
+async function animDrag() {
+  const rows = list.querySelectorAll('.row');
+  const src = rows[4]; // last row
+  const rect0 = src.getBoundingClientRect();
+  const rect1 = rows[0].getBoundingClientRect();
+  const dy = rect1.top - rect0.top;
+
+  // Lift
+  src.classList.add('dragging');
+  src.style.transition = 'transform 0.25s ease-out';
+  src.style.transform = 'translate(-6px, -4px)';
+  await new Promise(r => setTimeout(r, 300));
+
+  // Drag upward through rows
+  src.style.transition = 'transform 1.2s cubic-bezier(.4,.05,.2,1)';
+  src.style.transform = `translate(-6px, ${dy - 4}px)`;
+
+  // Show drop indicator on destination after partial travel
+  await new Promise(r => setTimeout(r, 700));
+  rows[0].classList.add('drag-over-top');
+
+  await new Promise(r => setTimeout(r, 700));
+
+  // Drop
+  src.style.transition = 'transform 0.25s ease-in, background 0.3s';
+  src.style.transform = 'translate(0, 0)';
+  rows[0].classList.remove('drag-over-top');
+  await new Promise(r => setTimeout(r, 300));
+  src.classList.remove('dragging');
+  src.style.transition = '';
+  src.style.transform = '';
+
+  // Actually reorder DOM
+  list.insertBefore(src, rows[0]);
+
+  // Update numbering labels
+  list.querySelectorAll('.row').forEach((r, i) => {
+    const nm = r.querySelector('.name');
+    nm.textContent = nm.textContent.replace(/^\d+\./, (i + 1) + '.');
+  });
+}
+
+async function restoreOrder() {
+  // Reset after animation: reverse the insert
+  const rows = Array.from(list.querySelectorAll('.row'));
+  rows.sort((a, b) => parseInt(a.dataset.i) - parseInt(b.dataset.i));
+  rows.forEach(r => list.appendChild(r));
+  list.querySelectorAll('.row').forEach((r, i) => {
+    const nm = r.querySelector('.name');
+    nm.textContent = nm.textContent.replace(/^\d+\./, (i + 1) + '.');
+  });
+}
+
+async function cycle() {
+  await new Promise(r => setTimeout(r, 1000));
+  while (true) {
+    await animDrag();
+    await new Promise(r => setTimeout(r, 1200));
+    await restoreOrder();
+    await new Promise(r => setTimeout(r, 800));
+  }
+}
+cycle();
+</script>
+</body>
+</html>
